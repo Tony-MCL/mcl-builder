@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../admin/AdminShell";
 import { demoSite } from "../data/demoSite";
 import { PublicSite } from "../public-site/PublicSite";
@@ -10,6 +10,9 @@ import type {
 } from "../types/site";
 
 type AppMode = "public" | "admin";
+type SaveStatus = "loaded" | "saving" | "saved" | "error";
+
+const STORAGE_KEY = "mcl-builder-site-v1";
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -18,13 +21,8 @@ function createId(prefix: string) {
 function normalizeSlug(value: string) {
   const trimmed = value.trim();
 
-  if (!trimmed) {
-    return "/";
-  }
-
-  if (trimmed === "/") {
-    return "/";
-  }
+  if (!trimmed) return "/";
+  if (trimmed === "/") return "/";
 
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
@@ -39,6 +37,26 @@ function getCurrentSlug() {
   }
 
   return pathname || "/";
+}
+
+function loadInitialSite(): SiteData {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) {
+      return demoSite;
+    }
+
+    const parsed = JSON.parse(saved) as SiteData;
+
+    if (!parsed.siteName || !Array.isArray(parsed.pages)) {
+      return demoSite;
+    }
+
+    return parsed;
+  } catch {
+    return demoSite;
+  }
 }
 
 function createEmptyPage(existingCount: number): SitePage {
@@ -94,11 +112,13 @@ function createSection(type: SiteSectionType): SiteSection {
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>("public");
-  const [site, setSite] = useState<SiteData>(demoSite);
-  const [selectedPageId, setSelectedPageId] = useState(
-    demoSite.pages[0]?.id ?? ""
-  );
+  const [site, setSite] = useState<SiteData>(() => loadInitialSite());
+  const [selectedPageId, setSelectedPageId] = useState(() => {
+    const initialSite = loadInitialSite();
+    return initialSite.pages[0]?.id ?? "";
+  });
   const [currentSlug, setCurrentSlug] = useState(getCurrentSlug);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("loaded");
 
   const selectedPage = useMemo(() => {
     return site.pages.find((page) => page.id === selectedPageId) ?? site.pages[0];
@@ -106,11 +126,22 @@ export default function App() {
 
   const publicPage = useMemo(() => {
     const normalizedCurrentSlug = normalizeSlug(currentSlug);
+
     return (
       site.pages.find((page) => normalizeSlug(page.slug) === normalizedCurrentSlug) ??
       site.pages[0]
     );
   }, [currentSlug, site.pages]);
+
+  useEffect(() => {
+    try {
+      setSaveStatus("saving");
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(site));
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("error");
+    }
+  }, [site]);
 
   function setPublicPath(slug: string) {
     const normalizedSlug = normalizeSlug(slug);
@@ -151,11 +182,9 @@ export default function App() {
   function addSection(type: SiteSectionType) {
     if (!selectedPage) return;
 
-    const newSection = createSection(type);
-
     updatePage({
       ...selectedPage,
-      sections: [...selectedPage.sections, newSection],
+      sections: [...selectedPage.sections, createSection(type)],
     });
   }
 
@@ -170,12 +199,20 @@ export default function App() {
     });
   }
 
+  function resetLocalSite() {
+    window.localStorage.removeItem(STORAGE_KEY);
+    setSite(demoSite);
+    setSelectedPageId(demoSite.pages[0]?.id ?? "");
+    setMode("admin");
+    setSaveStatus("saved");
+  }
+
   return (
     <div className="app">
       <header className="topbar">
         <div>
           <strong>Morning Coffee Labs Builder</strong>
-          <span>Foundation v0.3</span>
+          <span>Foundation v0.4</span>
         </div>
 
         <div className="mode-switch">
@@ -201,12 +238,14 @@ export default function App() {
           site={site}
           selectedPage={selectedPage}
           selectedPageId={selectedPageId}
+          saveStatus={saveStatus}
           onSelectPage={setSelectedPageId}
           onCreatePage={createPage}
           onUpdatePage={updatePage}
           onAddSection={addSection}
           onUpdateSection={updateSection}
           onOpenPublicPage={setPublicPath}
+          onResetLocalSite={resetLocalSite}
         />
       )}
     </div>
