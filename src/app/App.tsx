@@ -157,7 +157,9 @@ export default function App() {
 
   function setPublicPath(slug: string) {
     const normalizedSlug = normalizeSlug(slug);
-    window.location.hash = normalizedSlug;
+    const basePath = import.meta.env.BASE_URL;
+  
+    window.history.pushState({}, "", `${basePath}#${normalizedSlug}`);
     setCurrentSlug(normalizedSlug);
     setMode("public");
   }
