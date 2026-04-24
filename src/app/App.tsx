@@ -28,15 +28,13 @@ function normalizeSlug(value: string) {
 }
 
 function getCurrentSlug() {
-  const pathname = window.location.pathname;
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const hash = window.location.hash.replace(/^#/, "");
 
-  if (basePath && pathname.startsWith(basePath)) {
-    const withoutBase = pathname.slice(basePath.length);
-    return withoutBase || "/";
+  if (!hash) {
+    return "/";
   }
 
-  return pathname || "/";
+  return normalizeSlug(hash);
 }
 
 function loadInitialSite(): SiteData {
@@ -111,12 +109,13 @@ function createSection(type: SiteSectionType): SiteSection {
 }
 
 export default function App() {
+  const initialSite = useMemo(() => loadInitialSite(), []);
+
   const [mode, setMode] = useState<AppMode>("public");
-  const [site, setSite] = useState<SiteData>(() => loadInitialSite());
-  const [selectedPageId, setSelectedPageId] = useState(() => {
-    const initialSite = loadInitialSite();
-    return initialSite.pages[0]?.id ?? "";
-  });
+  const [site, setSite] = useState<SiteData>(initialSite);
+  const [selectedPageId, setSelectedPageId] = useState(
+    initialSite.pages[0]?.id ?? ""
+  );
   const [currentSlug, setCurrentSlug] = useState(getCurrentSlug);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("loaded");
 
@@ -134,6 +133,19 @@ export default function App() {
   }, [currentSlug, site.pages]);
 
   useEffect(() => {
+    function handleHashChange() {
+      setCurrentSlug(getCurrentSlug());
+      setMode("public");
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, []);
+
+  useEffect(() => {
     try {
       setSaveStatus("saving");
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(site));
@@ -145,10 +157,7 @@ export default function App() {
 
   function setPublicPath(slug: string) {
     const normalizedSlug = normalizeSlug(slug);
-    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-    const nextPath = `${basePath}${normalizedSlug === "/" ? "/" : normalizedSlug}`;
-
-    window.history.pushState({}, "", nextPath);
+    window.location.hash = normalizedSlug;
     setCurrentSlug(normalizedSlug);
     setMode("public");
   }
@@ -203,6 +212,8 @@ export default function App() {
     window.localStorage.removeItem(STORAGE_KEY);
     setSite(demoSite);
     setSelectedPageId(demoSite.pages[0]?.id ?? "");
+    window.location.hash = "/";
+    setCurrentSlug("/");
     setMode("admin");
     setSaveStatus("saved");
   }
