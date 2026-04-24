@@ -24,6 +24,7 @@ type AdminShellProps = {
   onUpdatePage: (page: SitePage) => void;
   onAddSection: (type: SiteSectionType) => void;
   onUpdateSection: (section: SiteSection) => void;
+  onDuplicateSection: (sectionId: string) => void;
   onDeleteSection: (sectionId: string) => void;
   onMoveSection: (sectionId: string, direction: "up" | "down") => void;
   onOpenPublicPage: (slug: string) => void;
@@ -72,6 +73,7 @@ export function AdminShell({
   onUpdatePage,
   onAddSection,
   onUpdateSection,
+  onDuplicateSection,
   onDeleteSection,
   onMoveSection,
   onOpenPublicPage,
@@ -185,6 +187,7 @@ export function AdminShell({
                     isFirst={index === 0}
                     isLast={index === selectedPage.sections.length - 1}
                     onUpdateSection={onUpdateSection}
+                    onDuplicateSection={onDuplicateSection}
                     onDeleteSection={onDeleteSection}
                     onMoveSection={onMoveSection}
                   />
@@ -503,6 +506,7 @@ function SectionEditor({
   isFirst,
   isLast,
   onUpdateSection,
+  onDuplicateSection,
   onDeleteSection,
   onMoveSection,
 }: {
@@ -510,6 +514,7 @@ function SectionEditor({
   isFirst: boolean;
   isLast: boolean;
   onUpdateSection: (section: SiteSection) => void;
+  onDuplicateSection: (sectionId: string) => void;
   onDeleteSection: (sectionId: string) => void;
   onMoveSection: (sectionId: string, direction: "up" | "down") => void;
 }) {
@@ -526,6 +531,49 @@ function SectionEditor({
       cards: (section.cards ?? []).map((card) =>
         card.id === updatedCard.id ? updatedCard : card
       ),
+    });
+  }
+
+  function duplicateCard(cardId: string) {
+    const cardToDuplicate = (section.cards ?? []).find((card) => card.id === cardId);
+  
+    if (!cardToDuplicate) return;
+  
+    const duplicatedCard: SiteCard = {
+      ...cardToDuplicate,
+      id: createLocalId("card"),
+      title: `${cardToDuplicate.title} copy`,
+    };
+  
+    const currentIndex = (section.cards ?? []).findIndex(
+      (card) => card.id === cardId
+    );
+  
+    const nextCards = [...(section.cards ?? [])];
+    nextCards.splice(currentIndex + 1, 0, duplicatedCard);
+  
+    onUpdateSection({
+      ...section,
+      cards: nextCards,
+    });
+  }
+  
+  function moveCard(cardId: string, direction: "up" | "down") {
+    const cards = [...(section.cards ?? [])];
+    const currentIndex = cards.findIndex((card) => card.id === cardId);
+  
+    if (currentIndex < 0) return;
+  
+    const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  
+    if (nextIndex < 0 || nextIndex >= cards.length) return;
+  
+    const [movedCard] = cards.splice(currentIndex, 1);
+    cards.splice(nextIndex, 0, movedCard);
+  
+    onUpdateSection({
+      ...section,
+      cards,
     });
   }
 
@@ -560,6 +608,13 @@ function SectionEditor({
             onClick={() => onMoveSection(section.id, "down")}
           >
             Down
+          </button>
+          <button
+            className="secondary-button tiny-button"
+            type="button"
+            onClick={() => onDuplicateSection(section.id)}
+          >
+            Duplicate
           </button>
           <button
             className="danger-button tiny-button"
@@ -691,11 +746,15 @@ function SectionEditor({
             </div>
 
             <div className="card-editor-list">
-              {(section.cards ?? []).map((card) => (
+              {(section.cards ?? []).map((card, index) => (
                 <CardEditor
                   key={card.id}
                   card={card}
+                  isFirst={index === 0}
+                  isLast={index === (section.cards ?? []).length - 1}
                   onUpdate={updateCard}
+                  onDuplicate={duplicateCard}
+                  onMove={moveCard}
                   onDelete={deleteCard}
                 />
               ))}
@@ -709,15 +768,63 @@ function SectionEditor({
 
 function CardEditor({
   card,
+  isFirst,
+  isLast,
   onUpdate,
+  onDuplicate,
+  onMove,
   onDelete,
 }: {
   card: SiteCard;
+  isFirst: boolean;
+  isLast: boolean;
   onUpdate: (card: SiteCard) => void;
+  onDuplicate: (cardId: string) => void;
+  onMove: (cardId: string, direction: "up" | "down") => void;
   onDelete: (cardId: string) => void;
 }) {
   return (
     <div className="card-editor">
+      <div className="section-editor-header">
+        <div>
+          <strong>{card.title || "Untitled card"}</strong>
+          <span>card</span>
+        </div>
+
+        <div className="section-actions">
+          <button
+            className="secondary-button tiny-button"
+            type="button"
+            disabled={isFirst}
+            onClick={() => onMove(card.id, "up")}
+          >
+            Up
+          </button>
+          <button
+            className="secondary-button tiny-button"
+            type="button"
+            disabled={isLast}
+            onClick={() => onMove(card.id, "down")}
+          >
+            Down
+          </button>
+          <button
+            className="secondary-button tiny-button"
+            type="button"
+            onClick={() => onDuplicate(card.id)}
+          >
+            Duplicate
+          </button>
+          <button
+            className="danger-button tiny-button"
+            type="button"
+            onClick={() => onDelete(card.id)}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
       <label>
         Card title
         <input
@@ -774,14 +881,6 @@ function CardEditor({
           }
         />
       </label>
-
-      <button
-        className="danger-button"
-        type="button"
-        onClick={() => onDelete(card.id)}
-      >
-        Delete card
-      </button>
     </div>
   );
 }
