@@ -1,23 +1,124 @@
 import { useMemo, useState } from "react";
+import { AdminShell } from "../admin/AdminShell";
 import { demoSite } from "../data/demoSite";
 import { PublicSite } from "../public-site/PublicSite";
-import { AdminShell } from "../admin/AdminShell";
+import type { SiteData, SitePage, SiteSection, SiteSectionType } from "../types/site";
 
 type AppMode = "public" | "admin";
 
+function createId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createEmptyPage(existingCount: number): SitePage {
+  const pageNumber = existingCount + 1;
+
+  return {
+    id: createId("page"),
+    slug: `/page-${pageNumber}`,
+    title: `New page ${pageNumber}`,
+    description: "Describe this page.",
+    sections: [
+      {
+        id: createId("section"),
+        type: "hero",
+        title: `New page ${pageNumber}`,
+        subtitle: "New page subtitle",
+        body: "Start building this page by editing this section.",
+        buttonLabel: "Edit me",
+      },
+    ],
+  };
+}
+
+function createSection(type: SiteSectionType): SiteSection {
+  if (type === "hero") {
+    return {
+      id: createId("section"),
+      type,
+      title: "New hero section",
+      subtitle: "Hero subtitle",
+      body: "Write the main message for this hero section.",
+      buttonLabel: "Call to action",
+    };
+  }
+
+  if (type === "cta") {
+    return {
+      id: createId("section"),
+      type,
+      title: "New CTA section",
+      body: "Write a clear action message here.",
+      buttonLabel: "Get started",
+    };
+  }
+
+  return {
+    id: createId("section"),
+    type,
+    title: "New text section",
+    body: "Write section content here.",
+  };
+}
+
 export default function App() {
   const [mode, setMode] = useState<AppMode>("public");
+  const [site, setSite] = useState<SiteData>(demoSite);
+  const [selectedPageId, setSelectedPageId] = useState(demoSite.pages[0]?.id ?? "");
 
   const selectedPage = useMemo(() => {
-    return demoSite.pages[0];
-  }, []);
+    return site.pages.find((page) => page.id === selectedPageId) ?? site.pages[0];
+  }, [selectedPageId, site.pages]);
+
+  function createPage() {
+    const newPage = createEmptyPage(site.pages.length);
+
+    setSite((currentSite) => ({
+      ...currentSite,
+      pages: [...currentSite.pages, newPage],
+    }));
+
+    setSelectedPageId(newPage.id);
+    setMode("admin");
+  }
+
+  function updatePage(updatedPage: SitePage) {
+    setSite((currentSite) => ({
+      ...currentSite,
+      pages: currentSite.pages.map((page) =>
+        page.id === updatedPage.id ? updatedPage : page
+      ),
+    }));
+  }
+
+  function addSection(type: SiteSectionType) {
+    if (!selectedPage) return;
+
+    const newSection = createSection(type);
+
+    updatePage({
+      ...selectedPage,
+      sections: [...selectedPage.sections, newSection],
+    });
+  }
+
+  function updateSection(updatedSection: SiteSection) {
+    if (!selectedPage) return;
+
+    updatePage({
+      ...selectedPage,
+      sections: selectedPage.sections.map((section) =>
+        section.id === updatedSection.id ? updatedSection : section
+      ),
+    });
+  }
 
   return (
     <div className="app">
       <header className="topbar">
         <div>
           <strong>Morning Coffee Labs Builder</strong>
-          <span>Foundation v0.1</span>
+          <span>Foundation v0.2</span>
         </div>
 
         <div className="mode-switch">
@@ -39,7 +140,16 @@ export default function App() {
       {mode === "public" ? (
         <PublicSite page={selectedPage} />
       ) : (
-        <AdminShell site={demoSite} selectedPage={selectedPage} />
+        <AdminShell
+          site={site}
+          selectedPage={selectedPage}
+          selectedPageId={selectedPageId}
+          onSelectPage={setSelectedPageId}
+          onCreatePage={createPage}
+          onUpdatePage={updatePage}
+          onAddSection={addSection}
+          onUpdateSection={updateSection}
+        />
       )}
     </div>
   );
