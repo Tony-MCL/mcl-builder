@@ -4,6 +4,9 @@ import { demoSite } from "../data/demoSite";
 import { PublicSite } from "../public-site/PublicSite";
 import type {
   SiteData,
+  SiteFooter,
+  SiteHeader,
+  SiteLink,
   SitePage,
   SiteSection,
   SiteSectionType,
@@ -37,6 +40,23 @@ function getCurrentSlug() {
   return normalizeSlug(hash);
 }
 
+function ensureSiteShape(site: SiteData): SiteData {
+  return {
+    ...site,
+    header: site.header ?? {
+      enabled: true,
+      logoText: site.siteName,
+      links: [],
+    },
+    footer: site.footer ?? {
+      enabled: true,
+      text: `© ${site.siteName}`,
+      links: [],
+    },
+    pages: Array.isArray(site.pages) ? site.pages : demoSite.pages,
+  };
+}
+
 function loadInitialSite(): SiteData {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -51,7 +71,7 @@ function loadInitialSite(): SiteData {
       return demoSite;
     }
 
-    return parsed;
+    return ensureSiteShape(parsed);
   } catch {
     return demoSite;
   }
@@ -73,6 +93,7 @@ function createEmptyPage(existingCount: number): SitePage {
         subtitle: "New page subtitle",
         body: "Start building this page by editing this section.",
         buttonLabel: "Edit me",
+        buttonHref: "/",
       },
     ],
   };
@@ -87,6 +108,7 @@ function createSection(type: SiteSectionType): SiteSection {
       subtitle: "Hero subtitle",
       body: "Write the main message for this hero section.",
       buttonLabel: "Call to action",
+      buttonHref: "/",
     };
   }
 
@@ -97,6 +119,7 @@ function createSection(type: SiteSectionType): SiteSection {
       title: "New CTA section",
       body: "Write a clear action message here.",
       buttonLabel: "Get started",
+      buttonHref: "/",
     };
   }
 
@@ -105,6 +128,14 @@ function createSection(type: SiteSectionType): SiteSection {
     type,
     title: "New text section",
     body: "Write section content here.",
+  };
+}
+
+function createLink(label = "New link"): SiteLink {
+  return {
+    id: createId("link"),
+    label,
+    href: "/",
   };
 }
 
@@ -158,7 +189,7 @@ export default function App() {
   function setPublicPath(slug: string) {
     const normalizedSlug = normalizeSlug(slug);
     const basePath = import.meta.env.BASE_URL;
-  
+
     window.history.pushState({}, "", `${basePath}#${normalizedSlug}`);
     setCurrentSlug(normalizedSlug);
     setMode("public");
@@ -210,6 +241,98 @@ export default function App() {
     });
   }
 
+  function deleteSection(sectionId: string) {
+    if (!selectedPage) return;
+
+    updatePage({
+      ...selectedPage,
+      sections: selectedPage.sections.filter((section) => section.id !== sectionId),
+    });
+  }
+
+  function moveSection(sectionId: string, direction: "up" | "down") {
+    if (!selectedPage) return;
+
+    const currentIndex = selectedPage.sections.findIndex(
+      (section) => section.id === sectionId
+    );
+
+    if (currentIndex < 0) return;
+
+    const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (nextIndex < 0 || nextIndex >= selectedPage.sections.length) return;
+
+    const nextSections = [...selectedPage.sections];
+    const [movedSection] = nextSections.splice(currentIndex, 1);
+    nextSections.splice(nextIndex, 0, movedSection);
+
+    updatePage({
+      ...selectedPage,
+      sections: nextSections,
+    });
+  }
+
+  function updateHeader(header: SiteHeader) {
+    setSite((currentSite) => ({
+      ...currentSite,
+      header,
+    }));
+  }
+
+  function updateFooter(footer: SiteFooter) {
+    setSite((currentSite) => ({
+      ...currentSite,
+      footer,
+    }));
+  }
+
+  function addHeaderLink() {
+    updateHeader({
+      ...site.header,
+      links: [...site.header.links, createLink("Header link")],
+    });
+  }
+
+  function addFooterLink() {
+    updateFooter({
+      ...site.footer,
+      links: [...site.footer.links, createLink("Footer link")],
+    });
+  }
+
+  function updateHeaderLink(updatedLink: SiteLink) {
+    updateHeader({
+      ...site.header,
+      links: site.header.links.map((link) =>
+        link.id === updatedLink.id ? updatedLink : link
+      ),
+    });
+  }
+
+  function updateFooterLink(updatedLink: SiteLink) {
+    updateFooter({
+      ...site.footer,
+      links: site.footer.links.map((link) =>
+        link.id === updatedLink.id ? updatedLink : link
+      ),
+    });
+  }
+
+  function deleteHeaderLink(linkId: string) {
+    updateHeader({
+      ...site.header,
+      links: site.header.links.filter((link) => link.id !== linkId),
+    });
+  }
+
+  function deleteFooterLink(linkId: string) {
+    updateFooter({
+      ...site.footer,
+      links: site.footer.links.filter((link) => link.id !== linkId),
+    });
+  }
+
   function resetLocalSite() {
     window.localStorage.removeItem(STORAGE_KEY);
     setSite(demoSite);
@@ -225,7 +348,7 @@ export default function App() {
       <header className="topbar">
         <div>
           <strong>Morning Coffee Labs Builder</strong>
-          <span>Foundation v0.4</span>
+          <span>Foundation v0.5</span>
         </div>
 
         <div className="mode-switch">
@@ -245,7 +368,7 @@ export default function App() {
       </header>
 
       {mode === "public" ? (
-        <PublicSite page={publicPage} />
+        <PublicSite site={site} page={publicPage} onNavigate={setPublicPath} />
       ) : (
         <AdminShell
           site={site}
@@ -257,8 +380,18 @@ export default function App() {
           onUpdatePage={updatePage}
           onAddSection={addSection}
           onUpdateSection={updateSection}
+          onDeleteSection={deleteSection}
+          onMoveSection={moveSection}
           onOpenPublicPage={setPublicPath}
           onResetLocalSite={resetLocalSite}
+          onUpdateHeader={updateHeader}
+          onUpdateFooter={updateFooter}
+          onAddHeaderLink={addHeaderLink}
+          onAddFooterLink={addFooterLink}
+          onUpdateHeaderLink={updateHeaderLink}
+          onUpdateFooterLink={updateFooterLink}
+          onDeleteHeaderLink={deleteHeaderLink}
+          onDeleteFooterLink={deleteFooterLink}
         />
       )}
     </div>
