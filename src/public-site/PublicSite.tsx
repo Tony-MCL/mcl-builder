@@ -121,6 +121,8 @@ function SectionRenderer({
   onNavigate?: (href: string) => void;
 }) {
   if (section.type === "cards") {
+    const columns = section.cardsColumns ?? 3;
+
     return (
       <section className="section cards-section">
         <div className="section-heading">
@@ -129,7 +131,7 @@ function SectionRenderer({
           {section.body && <p>{section.body}</p>}
         </div>
 
-        <div className="cards-grid">
+        <div className={`cards-grid cards-grid-${columns}`}>
           {(section.cards ?? []).map((card) => (
             <article className="public-card" key={card.id}>
               {card.imageUrl && (
@@ -139,8 +141,10 @@ function SectionRenderer({
                   alt={card.imageAlt || ""}
                 />
               )}
+
               <h3>{card.title}</h3>
               <p>{card.body}</p>
+
               {card.linkLabel && (
                 <button
                   className="secondary-public-button"
