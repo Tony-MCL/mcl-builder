@@ -1,5 +1,23 @@
 export type SiteSectionType = "hero" | "text" | "cards" | "cta";
 
+export type SiteLink = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+export type SiteHeader = {
+  enabled: boolean;
+  logoText: string;
+  links: SiteLink[];
+};
+
+export type SiteFooter = {
+  enabled: boolean;
+  text: string;
+  links: SiteLink[];
+};
+
 export type SiteSection = {
   id: string;
   type: SiteSectionType;
@@ -7,6 +25,9 @@ export type SiteSection = {
   subtitle?: string;
   body?: string;
   buttonLabel?: string;
+  buttonHref?: string;
+  imageUrl?: string;
+  imageAlt?: string;
 };
 
 export type SitePage = {
@@ -19,5 +40,7 @@ export type SitePage = {
 
 export type SiteData = {
   siteName: string;
+  header: SiteHeader;
+  footer: SiteFooter;
   pages: SitePage[];
 };
