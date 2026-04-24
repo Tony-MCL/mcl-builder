@@ -694,3 +694,44 @@ p {
     outline-offset: 6px;
     box-shadow: 0 22px 70px rgba(138, 90, 43, 0.22);
   }
+
+  .preview-section-actions {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 5;
+    display: flex;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(23, 32, 51, 0.14);
+    box-shadow: 0 12px 35px rgba(23, 32, 51, 0.14);
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition:
+      opacity 0.16s ease,
+      transform 0.16s ease;
+  }
+  
+  .public-site-edit-mode .section:hover .preview-section-actions,
+  .public-site-edit-mode .selected-preview-section .preview-section-actions {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  
+  .preview-section-actions button {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+  
+  .preview-section-actions .preview-danger-button {
+    background: #b83232;
+    color: white;
+  }
