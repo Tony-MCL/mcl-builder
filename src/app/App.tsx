@@ -190,6 +190,7 @@ export default function App() {
   );
   const [currentSlug, setCurrentSlug] = useState(getCurrentSlug);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("loaded");
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
   const selectedPage = useMemo(() => {
     return site.pages.find((page) => page.id === selectedPageId) ?? site.pages[0];
@@ -449,8 +450,10 @@ export default function App() {
           site={site}
           selectedPage={selectedPage}
           selectedPageId={selectedPageId}
+          selectedSectionId={selectedSectionId}
           saveStatus={saveStatus}
           onSelectPage={setSelectedPageId}
+          onSelectSection={setSelectedSectionId}
           onCreatePage={createPage}
           onUpdatePage={updatePage}
           onAddSection={addSection}
