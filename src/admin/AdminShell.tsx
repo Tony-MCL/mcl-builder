@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { PublicSite } from "../public-site/PublicSite";
 import type {
+  SiteCard,
   SiteData,
   SiteFooter,
   SiteHeader,
   SiteLink,
   SitePage,
+  SitePageType,
   SiteSection,
   SiteSectionType,
 } from "../types/site";
@@ -35,13 +38,28 @@ type AdminShellProps = {
   onDeleteFooterLink: (linkId: string) => void;
 };
 
-const sectionTypes: SiteSectionType[] = ["hero", "text", "cta"];
+const sectionTypes: SiteSectionType[] = ["hero", "text", "cards", "cta"];
+const pageTypes: SitePageType[] = ["standard", "landing", "legal"];
 
 function getSaveStatusLabel(status: SaveStatus) {
   if (status === "saving") return "Saving locally...";
   if (status === "saved") return "Saved locally";
   if (status === "error") return "Local save failed";
   return "Loaded from local storage";
+}
+
+function createLocalId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createEmptyCard(): SiteCard {
+  return {
+    id: createLocalId("card"),
+    title: "New card",
+    body: "Write card content here.",
+    linkLabel: "Read more",
+    linkHref: "/",
+  };
 }
 
 export function AdminShell({
@@ -107,25 +125,23 @@ export function AdminShell({
 
         <div className="admin-grid">
           <section className="admin-panel">
-            <GlobalLayoutEditor
-              site={site}
-              onUpdateHeader={onUpdateHeader}
-              onUpdateFooter={onUpdateFooter}
-              onAddHeaderLink={onAddHeaderLink}
-              onAddFooterLink={onAddFooterLink}
-              onUpdateHeaderLink={onUpdateHeaderLink}
-              onUpdateFooterLink={onUpdateFooterLink}
-              onDeleteHeaderLink={onDeleteHeaderLink}
-              onDeleteFooterLink={onDeleteFooterLink}
-            />
+            <CollapsiblePanel title="Global layout" defaultOpen>
+              <GlobalLayoutEditor
+                site={site}
+                onUpdateHeader={onUpdateHeader}
+                onUpdateFooter={onUpdateFooter}
+                onAddHeaderLink={onAddHeaderLink}
+                onAddFooterLink={onAddFooterLink}
+                onUpdateHeaderLink={onUpdateHeaderLink}
+                onUpdateFooterLink={onUpdateFooterLink}
+                onDeleteHeaderLink={onDeleteHeaderLink}
+                onDeleteFooterLink={onDeleteFooterLink}
+              />
+            </CollapsiblePanel>
 
-            <div className="editor-group">
-              <div className="admin-panel-header">
-                <div>
-                  <h2>Pages</h2>
-                  <p className="muted">Choose or create a page.</p>
-                </div>
-
+            <CollapsiblePanel title="Pages" defaultOpen>
+              <div className="admin-panel-header compact">
+                <p className="muted">Choose or create a page.</p>
                 <button onClick={onCreatePage}>New page</button>
               </div>
 
@@ -143,54 +159,16 @@ export function AdminShell({
                   </button>
                 ))}
               </div>
-            </div>
+            </CollapsiblePanel>
 
-            <div className="editor-group">
-              <h2>Page settings</h2>
+            <CollapsiblePanel title="Page settings" defaultOpen>
+              <PageSettingsEditor
+                selectedPage={selectedPage}
+                onUpdatePage={onUpdatePage}
+              />
+            </CollapsiblePanel>
 
-              <label>
-                Page title
-                <input
-                  value={selectedPage.title}
-                  onChange={(event) =>
-                    onUpdatePage({
-                      ...selectedPage,
-                      title: event.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <label>
-                Slug
-                <input
-                  value={selectedPage.slug}
-                  onChange={(event) =>
-                    onUpdatePage({
-                      ...selectedPage,
-                      slug: event.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <label>
-                Description
-                <textarea
-                  value={selectedPage.description}
-                  onChange={(event) =>
-                    onUpdatePage({
-                      ...selectedPage,
-                      description: event.target.value,
-                    })
-                  }
-                />
-              </label>
-            </div>
-
-            <div className="editor-group">
-              <h2>Page structure</h2>
-
+            <CollapsiblePanel title="Page structure" defaultOpen>
               <div className="add-section-row">
                 {sectionTypes.map((type) => (
                   <button key={type} onClick={() => onAddSection(type)}>
@@ -212,7 +190,7 @@ export function AdminShell({
                   />
                 ))}
               </div>
-            </div>
+            </CollapsiblePanel>
           </section>
 
           <section className="preview-panel">
@@ -233,6 +211,131 @@ export function AdminShell({
           </section>
         </div>
       </section>
+    </div>
+  );
+}
+
+function CollapsiblePanel({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <section className="control-panel">
+      <button
+        className="control-panel-toggle"
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        <span>{title}</span>
+        <span>{isOpen ? "−" : "+"}</span>
+      </button>
+
+      {isOpen && <div className="control-panel-body">{children}</div>}
+    </section>
+  );
+}
+
+function PageSettingsEditor({
+  selectedPage,
+  onUpdatePage,
+}: {
+  selectedPage: SitePage;
+  onUpdatePage: (page: SitePage) => void;
+}) {
+  return (
+    <div className="field-stack">
+      <label>
+        Page title
+        <input
+          value={selectedPage.title}
+          onChange={(event) =>
+            onUpdatePage({
+              ...selectedPage,
+              title: event.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Slug
+        <input
+          value={selectedPage.slug}
+          onChange={(event) =>
+            onUpdatePage({
+              ...selectedPage,
+              slug: event.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Description
+        <textarea
+          value={selectedPage.description}
+          onChange={(event) =>
+            onUpdatePage({
+              ...selectedPage,
+              description: event.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Page type
+        <select
+          value={selectedPage.pageType ?? "standard"}
+          onChange={(event) =>
+            onUpdatePage({
+              ...selectedPage,
+              pageType: event.target.value as SitePageType,
+            })
+          }
+        >
+          {pageTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="checkbox-label">
+        <input
+          type="checkbox"
+          checked={selectedPage.hideHeader ?? false}
+          onChange={(event) =>
+            onUpdatePage({
+              ...selectedPage,
+              hideHeader: event.target.checked,
+            })
+          }
+        />
+        Hide header on this page
+      </label>
+
+      <label className="checkbox-label">
+        <input
+          type="checkbox"
+          checked={selectedPage.hideFooter ?? false}
+          onChange={(event) =>
+            onUpdatePage({
+              ...selectedPage,
+              hideFooter: event.target.checked,
+            })
+          }
+        />
+        Hide footer on this page
+      </label>
     </div>
   );
 }
@@ -259,13 +362,7 @@ function GlobalLayoutEditor({
   onDeleteFooterLink: (linkId: string) => void;
 }) {
   return (
-    <div className="editor-group no-border">
-      <h2>Global layout</h2>
-      <p className="muted">
-        Header and footer are global. They are optional, so legal pages or landing
-        pages can later use different display rules.
-      </p>
-
+    <div className="field-stack">
       <div className="layout-box">
         <label className="checkbox-label">
           <input
@@ -378,12 +475,7 @@ function LinkEditor({
         Label
         <input
           value={link.label}
-          onChange={(event) =>
-            onUpdate({
-              ...link,
-              label: event.target.value,
-            })
-          }
+          onChange={(event) => onUpdate({ ...link, label: event.target.value })}
         />
       </label>
 
@@ -391,12 +483,7 @@ function LinkEditor({
         Link / slug
         <input
           value={link.href}
-          onChange={(event) =>
-            onUpdate({
-              ...link,
-              href: event.target.value,
-            })
-          }
+          onChange={(event) => onUpdate({ ...link, href: event.target.value })}
         />
       </label>
 
@@ -426,6 +513,29 @@ function SectionEditor({
   onDeleteSection: (sectionId: string) => void;
   onMoveSection: (sectionId: string, direction: "up" | "down") => void;
 }) {
+  function addCard() {
+    onUpdateSection({
+      ...section,
+      cards: [...(section.cards ?? []), createEmptyCard()],
+    });
+  }
+
+  function updateCard(updatedCard: SiteCard) {
+    onUpdateSection({
+      ...section,
+      cards: (section.cards ?? []).map((card) =>
+        card.id === updatedCard.id ? updatedCard : card
+      ),
+    });
+  }
+
+  function deleteCard(cardId: string) {
+    onUpdateSection({
+      ...section,
+      cards: (section.cards ?? []).filter((card) => card.id !== cardId),
+    });
+  }
+
   return (
     <div className="section-editor">
       <div className="section-editor-header">
@@ -461,57 +571,159 @@ function SectionEditor({
         </div>
       </div>
 
-      <label>
-        Title
-        <input
-          value={section.title}
-          onChange={(event) =>
-            onUpdateSection({
-              ...section,
-              title: event.target.value,
-            })
-          }
-        />
-      </label>
-
-      {(section.type === "hero" || section.subtitle !== undefined) && (
+      <div className="field-stack">
         <label>
-          Subtitle
+          Title
           <input
-            value={section.subtitle ?? ""}
+            value={section.title}
             onChange={(event) =>
-              onUpdateSection({
-                ...section,
-                subtitle: event.target.value,
-              })
+              onUpdateSection({ ...section, title: event.target.value })
             }
           />
         </label>
-      )}
+
+        {(section.type === "hero" ||
+          section.type === "cards" ||
+          section.subtitle !== undefined) && (
+          <label>
+            Subtitle
+            <input
+              value={section.subtitle ?? ""}
+              onChange={(event) =>
+                onUpdateSection({ ...section, subtitle: event.target.value })
+              }
+            />
+          </label>
+        )}
+
+        {section.type !== "cards" && (
+          <label>
+            Body
+            <textarea
+              value={section.body ?? ""}
+              onChange={(event) =>
+                onUpdateSection({ ...section, body: event.target.value })
+              }
+            />
+          </label>
+        )}
+
+        {section.type !== "cards" && (
+          <>
+            <label>
+              Image URL
+              <input
+                value={section.imageUrl ?? ""}
+                placeholder="https://..."
+                onChange={(event) =>
+                  onUpdateSection({ ...section, imageUrl: event.target.value })
+                }
+              />
+            </label>
+
+            <label>
+              Image alt text
+              <input
+                value={section.imageAlt ?? ""}
+                onChange={(event) =>
+                  onUpdateSection({ ...section, imageAlt: event.target.value })
+                }
+              />
+            </label>
+          </>
+        )}
+
+        {(section.type === "hero" || section.type === "cta") && (
+          <>
+            <label>
+              Button label
+              <input
+                value={section.buttonLabel ?? ""}
+                onChange={(event) =>
+                  onUpdateSection({
+                    ...section,
+                    buttonLabel: event.target.value,
+                  })
+                }
+              />
+            </label>
+
+            <label>
+              Button link / slug
+              <input
+                value={section.buttonHref ?? ""}
+                placeholder="/products"
+                onChange={(event) =>
+                  onUpdateSection({
+                    ...section,
+                    buttonHref: event.target.value,
+                  })
+                }
+              />
+            </label>
+          </>
+        )}
+
+        {section.type === "cards" && (
+          <div className="cards-editor">
+            <div className="link-editor-header">
+              <strong>Cards</strong>
+              <button type="button" onClick={addCard}>
+                Add card
+              </button>
+            </div>
+
+            <div className="card-editor-list">
+              {(section.cards ?? []).map((card) => (
+                <CardEditor
+                  key={card.id}
+                  card={card}
+                  onUpdate={updateCard}
+                  onDelete={deleteCard}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CardEditor({
+  card,
+  onUpdate,
+  onDelete,
+}: {
+  card: SiteCard;
+  onUpdate: (card: SiteCard) => void;
+  onDelete: (cardId: string) => void;
+}) {
+  return (
+    <div className="card-editor">
+      <label>
+        Card title
+        <input
+          value={card.title}
+          onChange={(event) => onUpdate({ ...card, title: event.target.value })}
+        />
+      </label>
 
       <label>
-        Body
+        Card text
         <textarea
-          value={section.body ?? ""}
-          onChange={(event) =>
-            onUpdateSection({
-              ...section,
-              body: event.target.value,
-            })
-          }
+          value={card.body}
+          onChange={(event) => onUpdate({ ...card, body: event.target.value })}
         />
       </label>
 
       <label>
         Image URL
         <input
-          value={section.imageUrl ?? ""}
+          value={card.imageUrl ?? ""}
           placeholder="https://..."
           onChange={(event) =>
-            onUpdateSection({
-              ...section,
-              imageUrl: event.target.value,
-            })
+            onUpdate({ ...card, imageUrl: event.target.value })
           }
         />
       </label>
@@ -519,46 +731,40 @@ function SectionEditor({
       <label>
         Image alt text
         <input
-          value={section.imageAlt ?? ""}
+          value={card.imageAlt ?? ""}
           onChange={(event) =>
-            onUpdateSection({
-              ...section,
-              imageAlt: event.target.value,
-            })
+            onUpdate({ ...card, imageAlt: event.target.value })
           }
         />
       </label>
 
-      {(section.type === "hero" || section.type === "cta") && (
-        <>
-          <label>
-            Button label
-            <input
-              value={section.buttonLabel ?? ""}
-              onChange={(event) =>
-                onUpdateSection({
-                  ...section,
-                  buttonLabel: event.target.value,
-                })
-              }
-            />
-          </label>
+      <label>
+        Link label
+        <input
+          value={card.linkLabel ?? ""}
+          onChange={(event) =>
+            onUpdate({ ...card, linkLabel: event.target.value })
+          }
+        />
+      </label>
 
-          <label>
-            Button link / slug
-            <input
-              value={section.buttonHref ?? ""}
-              placeholder="/products"
-              onChange={(event) =>
-                onUpdateSection({
-                  ...section,
-                  buttonHref: event.target.value,
-                })
-              }
-            />
-          </label>
-        </>
-      )}
+      <label>
+        Link / slug
+        <input
+          value={card.linkHref ?? ""}
+          onChange={(event) =>
+            onUpdate({ ...card, linkHref: event.target.value })
+          }
+        />
+      </label>
+
+      <button
+        className="danger-button"
+        type="button"
+        onClick={() => onDelete(card.id)}
+      >
+        Delete card
+      </button>
     </div>
   );
 }
