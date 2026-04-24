@@ -272,6 +272,18 @@ export default function App() {
     });
   }
 
+  function insertSection(type: SiteSectionType, index: number) {
+  if (!selectedPage) return;
+
+  const nextSections = [...selectedPage.sections];
+  nextSections.splice(index, 0, createSection(type));
+
+  updatePage({
+    ...selectedPage,
+    sections: nextSections,
+  });
+}
+
   function updateSection(updatedSection: SiteSection) {
     if (!selectedPage) return;
 
@@ -457,6 +469,7 @@ export default function App() {
           onCreatePage={createPage}
           onUpdatePage={updatePage}
           onAddSection={addSection}
+          onInsertSection={insertSection}
           onUpdateSection={updateSection}
           onDuplicateSection={duplicateSection}
           onDeleteSection={deleteSection}
