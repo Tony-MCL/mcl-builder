@@ -666,6 +666,23 @@ function SectionEditor({
 
         {section.type === "cards" && (
           <div className="cards-editor">
+            <label>
+              Cards per row
+              <select
+                value={section.cardsColumns ?? 3}
+                onChange={(event) =>
+                  onUpdateSection({
+                    ...section,
+                    cardsColumns: Number(event.target.value) as 1 | 2 | 3,
+                  })
+                }
+              >
+                <option value={1}>1 card per row</option>
+                <option value={2}>2 cards per row</option>
+                <option value={3}>3 cards per row</option>
+              </select>
+            </label>
+          
             <div className="link-editor-header">
               <strong>Cards</strong>
               <button type="button" onClick={addCard}>
