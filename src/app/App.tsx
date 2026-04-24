@@ -103,6 +103,8 @@ function createSection(type: SiteSectionType): SiteSection {
   if (type === "hero") {
     return {
       id: createId("section"),
+      internalName: "Hero section",
+      enabled: true,
       type,
       title: "New hero section",
       subtitle: "Hero subtitle",
@@ -112,9 +114,46 @@ function createSection(type: SiteSectionType): SiteSection {
     };
   }
 
+  if (type === "cards") {
+    return {
+      id: createId("section"),
+      internalName: "Cards section",
+      enabled: true,
+      type,
+      title: "New cards section",
+      subtitle: "A flexible card grid.",
+      cardsColumns: 3,
+      cards: [
+        {
+          id: createId("card"),
+          title: "First card",
+          body: "Write card content here.",
+          linkLabel: "Read more",
+          linkHref: "/",
+        },
+        {
+          id: createId("card"),
+          title: "Second card",
+          body: "Write card content here.",
+          linkLabel: "Read more",
+          linkHref: "/",
+        },
+        {
+          id: createId("card"),
+          title: "Third card",
+          body: "Write card content here.",
+          linkLabel: "Read more",
+          linkHref: "/",
+        },
+      ],
+    };
+  }
+
   if (type === "cta") {
     return {
       id: createId("section"),
+      internalName: "CTA section",
+      enabled: true,
       type,
       title: "New CTA section",
       body: "Write a clear action message here.",
@@ -125,6 +164,8 @@ function createSection(type: SiteSectionType): SiteSection {
 
   return {
     id: createId("section"),
+    internalName: "Text section",
+    enabled: true,
     type,
     title: "New text section",
     body: "Write section content here.",
@@ -253,6 +294,8 @@ export default function App() {
     const duplicatedSection: SiteSection = {
       ...sectionToDuplicate,
       id: createId("section"),
+      internalName: `${sectionToDuplicate.internalName ?? sectionToDuplicate.title} copy`,
+      enabled: sectionToDuplicate.enabled ?? true,
       title: `${sectionToDuplicate.title} copy`,
       cards: sectionToDuplicate.cards?.map((card) => ({
         ...card,
