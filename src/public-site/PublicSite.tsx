@@ -216,7 +216,9 @@ export function PublicSite({ site, page, onNavigate }: PublicSiteProps) {
       <PublicHeader site={site} page={page} onNavigate={onNavigate} />
 
       <main className={`public-site page-type-${page.pageType ?? "standard"}`}>
-        {page.sections.map((section) => (
+        {page.sections
+          .filter((section) => section.enabled !== false)
+          .map((section) => (
           <SectionRenderer
             key={section.id}
             section={section}
