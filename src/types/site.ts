@@ -18,6 +18,16 @@ export type SiteFooter = {
   links: SiteLink[];
 };
 
+export type SiteCard = {
+  id: string;
+  title: string;
+  body: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  linkLabel?: string;
+  linkHref?: string;
+};
+
 export type SiteSection = {
   id: string;
   type: SiteSectionType;
@@ -28,13 +38,19 @@ export type SiteSection = {
   buttonHref?: string;
   imageUrl?: string;
   imageAlt?: string;
+  cards?: SiteCard[];
 };
+
+export type SitePageType = "standard" | "landing" | "legal";
 
 export type SitePage = {
   id: string;
   slug: string;
   title: string;
   description: string;
+  pageType?: SitePageType;
+  hideHeader?: boolean;
+  hideFooter?: boolean;
   sections: SiteSection[];
 };
 
