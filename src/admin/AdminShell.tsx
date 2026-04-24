@@ -184,6 +184,7 @@ export function AdminShell({
                   <SectionEditor
                     key={section.id}
                     section={section}
+                    pages={site.pages}
                     isFirst={index === 0}
                     isLast={index === selectedPage.sections.length - 1}
                     onUpdateSection={onUpdateSection}
@@ -259,10 +260,7 @@ function PageSettingsEditor({
         <input
           value={selectedPage.title}
           onChange={(event) =>
-            onUpdatePage({
-              ...selectedPage,
-              title: event.target.value,
-            })
+            onUpdatePage({ ...selectedPage, title: event.target.value })
           }
         />
       </label>
@@ -272,10 +270,7 @@ function PageSettingsEditor({
         <input
           value={selectedPage.slug}
           onChange={(event) =>
-            onUpdatePage({
-              ...selectedPage,
-              slug: event.target.value,
-            })
+            onUpdatePage({ ...selectedPage, slug: event.target.value })
           }
         />
       </label>
@@ -285,10 +280,7 @@ function PageSettingsEditor({
         <textarea
           value={selectedPage.description}
           onChange={(event) =>
-            onUpdatePage({
-              ...selectedPage,
-              description: event.target.value,
-            })
+            onUpdatePage({ ...selectedPage, description: event.target.value })
           }
         />
       </label>
@@ -317,10 +309,7 @@ function PageSettingsEditor({
           type="checkbox"
           checked={selectedPage.hideHeader ?? false}
           onChange={(event) =>
-            onUpdatePage({
-              ...selectedPage,
-              hideHeader: event.target.checked,
-            })
+            onUpdatePage({ ...selectedPage, hideHeader: event.target.checked })
           }
         />
         Hide header on this page
@@ -331,10 +320,7 @@ function PageSettingsEditor({
           type="checkbox"
           checked={selectedPage.hideFooter ?? false}
           onChange={(event) =>
-            onUpdatePage({
-              ...selectedPage,
-              hideFooter: event.target.checked,
-            })
+            onUpdatePage({ ...selectedPage, hideFooter: event.target.checked })
           }
         />
         Hide footer on this page
@@ -372,10 +358,7 @@ function GlobalLayoutEditor({
             type="checkbox"
             checked={site.header.enabled}
             onChange={(event) =>
-              onUpdateHeader({
-                ...site.header,
-                enabled: event.target.checked,
-              })
+              onUpdateHeader({ ...site.header, enabled: event.target.checked })
             }
           />
           Show header
@@ -386,10 +369,7 @@ function GlobalLayoutEditor({
           <input
             value={site.header.logoText}
             onChange={(event) =>
-              onUpdateHeader({
-                ...site.header,
-                logoText: event.target.value,
-              })
+              onUpdateHeader({ ...site.header, logoText: event.target.value })
             }
           />
         </label>
@@ -419,10 +399,7 @@ function GlobalLayoutEditor({
             type="checkbox"
             checked={site.footer.enabled}
             onChange={(event) =>
-              onUpdateFooter({
-                ...site.footer,
-                enabled: event.target.checked,
-              })
+              onUpdateFooter({ ...site.footer, enabled: event.target.checked })
             }
           />
           Show footer
@@ -433,10 +410,7 @@ function GlobalLayoutEditor({
           <textarea
             value={site.footer.text}
             onChange={(event) =>
-              onUpdateFooter({
-                ...site.footer,
-                text: event.target.value,
-              })
+              onUpdateFooter({ ...site.footer, text: event.target.value })
             }
           />
         </label>
@@ -503,6 +477,7 @@ function LinkEditor({
 
 function SectionEditor({
   section,
+  pages,
   isFirst,
   isLast,
   onUpdateSection,
@@ -511,6 +486,7 @@ function SectionEditor({
   onMoveSection,
 }: {
   section: SiteSection;
+  pages: SitePage[];
   isFirst: boolean;
   isLast: boolean;
   onUpdateSection: (section: SiteSection) => void;
@@ -536,45 +512,38 @@ function SectionEditor({
 
   function duplicateCard(cardId: string) {
     const cardToDuplicate = (section.cards ?? []).find((card) => card.id === cardId);
-  
     if (!cardToDuplicate) return;
-  
+
     const duplicatedCard: SiteCard = {
       ...cardToDuplicate,
       id: createLocalId("card"),
       title: `${cardToDuplicate.title} copy`,
     };
-  
+
     const currentIndex = (section.cards ?? []).findIndex(
       (card) => card.id === cardId
     );
-  
+
     const nextCards = [...(section.cards ?? [])];
     nextCards.splice(currentIndex + 1, 0, duplicatedCard);
-  
-    onUpdateSection({
-      ...section,
-      cards: nextCards,
-    });
+
+    onUpdateSection({ ...section, cards: nextCards });
   }
-  
+
   function moveCard(cardId: string, direction: "up" | "down") {
     const cards = [...(section.cards ?? [])];
     const currentIndex = cards.findIndex((card) => card.id === cardId);
-  
+
     if (currentIndex < 0) return;
-  
+
     const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-  
+
     if (nextIndex < 0 || nextIndex >= cards.length) return;
-  
+
     const [movedCard] = cards.splice(currentIndex, 1);
     cards.splice(nextIndex, 0, movedCard);
-  
-    onUpdateSection({
-      ...section,
-      cards,
-    });
+
+    onUpdateSection({ ...section, cards });
   }
 
   function deleteCard(cardId: string) {
@@ -588,8 +557,13 @@ function SectionEditor({
     <div className="section-editor">
       <div className="section-editor-header">
         <div>
-          <strong>{section.title || "Untitled section"}</strong>
-          <span>{section.type}</span>
+          <strong>
+            {section.internalName || section.title || "Untitled section"}
+          </strong>
+          <span>
+            {section.type}
+            {section.enabled === false ? " · hidden" : ""}
+          </span>
         </div>
 
         <div className="section-actions">
@@ -627,6 +601,28 @@ function SectionEditor({
       </div>
 
       <div className="field-stack">
+        <label>
+          Internal name
+          <input
+            value={section.internalName ?? ""}
+            placeholder="Used only inside admin"
+            onChange={(event) =>
+              onUpdateSection({ ...section, internalName: event.target.value })
+            }
+          />
+        </label>
+
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={section.enabled !== false}
+            onChange={(event) =>
+              onUpdateSection({ ...section, enabled: event.target.checked })
+            }
+          />
+          Show this section
+        </label>
+
         <label>
           Title
           <input
@@ -695,24 +691,18 @@ function SectionEditor({
               <input
                 value={section.buttonLabel ?? ""}
                 onChange={(event) =>
-                  onUpdateSection({
-                    ...section,
-                    buttonLabel: event.target.value,
-                  })
+                  onUpdateSection({ ...section, buttonLabel: event.target.value })
                 }
               />
             </label>
 
             <label>
               Button link / slug
-              <input
+              <LinkPicker
                 value={section.buttonHref ?? ""}
-                placeholder="/products"
-                onChange={(event) =>
-                  onUpdateSection({
-                    ...section,
-                    buttonHref: event.target.value,
-                  })
+                pages={pages}
+                onChange={(value) =>
+                  onUpdateSection({ ...section, buttonHref: value })
                 }
               />
             </label>
@@ -737,7 +727,7 @@ function SectionEditor({
                 <option value={3}>3 cards per row</option>
               </select>
             </label>
-          
+
             <div className="link-editor-header">
               <strong>Cards</strong>
               <button type="button" onClick={addCard}>
@@ -750,6 +740,7 @@ function SectionEditor({
                 <CardEditor
                   key={card.id}
                   card={card}
+                  pages={pages}
                   isFirst={index === 0}
                   isLast={index === (section.cards ?? []).length - 1}
                   onUpdate={updateCard}
@@ -768,6 +759,7 @@ function SectionEditor({
 
 function CardEditor({
   card,
+  pages,
   isFirst,
   isLast,
   onUpdate,
@@ -776,6 +768,7 @@ function CardEditor({
   onDelete,
 }: {
   card: SiteCard;
+  pages: SitePage[];
   isFirst: boolean;
   isLast: boolean;
   onUpdate: (card: SiteCard) => void;
@@ -874,13 +867,48 @@ function CardEditor({
 
       <label>
         Link / slug
-        <input
+        <LinkPicker
           value={card.linkHref ?? ""}
-          onChange={(event) =>
-            onUpdate({ ...card, linkHref: event.target.value })
-          }
+          pages={pages}
+          onChange={(value) => onUpdate({ ...card, linkHref: value })}
         />
       </label>
+    </div>
+  );
+}
+
+function LinkPicker({
+  value,
+  pages,
+  onChange,
+}: {
+  value: string;
+  pages: SitePage[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="link-picker">
+      <select
+        value={pages.some((page) => page.slug === value) ? value : "__custom__"}
+        onChange={(event) => {
+          if (event.target.value !== "__custom__") {
+            onChange(event.target.value);
+          }
+        }}
+      >
+        <option value="__custom__">Custom / external link</option>
+        {pages.map((page) => (
+          <option key={page.id} value={page.slug}>
+            {page.title} — {page.slug}
+          </option>
+        ))}
+      </select>
+
+      <input
+        value={value}
+        placeholder="/products or https://..."
+        onChange={(event) => onChange(event.target.value)}
+      />
     </div>
   );
 }
