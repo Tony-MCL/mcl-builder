@@ -25,6 +25,7 @@ type AdminShellProps = {
   onCreatePage: () => void;
   onUpdatePage: (page: SitePage) => void;
   onAddSection: (type: SiteSectionType) => void;
+  onInsertSection: (type: SiteSectionType, index: number) => void;
   onUpdateSection: (section: SiteSection) => void;
   onDuplicateSection: (sectionId: string) => void;
   onDeleteSection: (sectionId: string) => void;
@@ -76,6 +77,7 @@ export function AdminShell({
   onCreatePage,
   onUpdatePage,
   onAddSection,
+  onInsertSection,
   onUpdateSection,
   onDuplicateSection,
   onDeleteSection,
@@ -221,6 +223,7 @@ export function AdminShell({
                 onMoveSection={onMoveSection}
                 onDuplicateSection={onDuplicateSection}
                 onDeleteSection={onDeleteSection}
+                onInsertSection={onInsertSection}
               />
             </div>
           </section>
