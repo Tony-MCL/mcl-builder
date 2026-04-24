@@ -16,7 +16,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -36,7 +37,8 @@ button:disabled {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid rgba(23, 32, 51, 0.16);
   border-radius: 14px;
@@ -148,6 +150,10 @@ label {
   padding: 2rem 1.25rem 4rem;
 }
 
+.page-type-legal {
+  max-width: 860px;
+}
+
 .site-footer {
   display: flex;
   justify-content: space-between;
@@ -172,6 +178,10 @@ label {
   box-shadow: 0 18px 55px rgba(23, 32, 51, 0.08);
 }
 
+.section-heading {
+  margin-bottom: 1.5rem;
+}
+
 .section-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 420px);
@@ -186,6 +196,45 @@ label {
 .hero-section {
   padding: 4rem 2rem;
   background: linear-gradient(135deg, #ffffff, #ebe4d6);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.public-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.25rem;
+  border-radius: 22px;
+  background: #f5f2ea;
+  border: 1px solid rgba(23, 32, 51, 0.08);
+}
+
+.public-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.public-card p {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.public-card-image {
+  width: 100%;
+  border-radius: 16px;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.secondary-public-button {
+  width: fit-content;
+  background: white;
+  color: #172033;
+  border: 1px solid rgba(23, 32, 51, 0.14);
 }
 
 .section-image-wrap {
@@ -310,7 +359,7 @@ p {
 
 .admin-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 500px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 520px) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
@@ -324,13 +373,21 @@ p {
   box-shadow: 0 18px 55px rgba(23, 32, 51, 0.08);
 }
 
+.admin-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
 .admin-panel-header,
 .preview-toolbar {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-  margin-bottom: 1rem;
+}
+
+.admin-panel-header.compact {
+  margin-bottom: 0.75rem;
 }
 
 .muted {
@@ -338,10 +395,39 @@ p {
   font-size: 0.96rem;
 }
 
+.control-panel {
+  overflow: hidden;
+  border: 1px solid rgba(23, 32, 51, 0.1);
+  border-radius: 20px;
+  background: #fff;
+}
+
+.control-panel-toggle {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  border-radius: 0;
+  padding: 1rem;
+  color: #172033;
+  background: #f5f2ea;
+  text-align: left;
+}
+
+.control-panel-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.field-stack {
+  display: grid;
+  gap: 0.85rem;
+}
+
 .page-list {
   display: grid;
   gap: 0.65rem;
-  margin: 1rem 0 1.5rem;
 }
 
 .page-item {
@@ -367,21 +453,9 @@ p {
   font-size: 0.9rem;
 }
 
-.editor-group {
-  display: grid;
-  gap: 0.85rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(23, 32, 51, 0.12);
-}
-
-.editor-group.no-border {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
-}
-
-.layout-box {
+.layout-box,
+.section-editor,
+.card-editor {
   display: grid;
   gap: 0.85rem;
   padding: 1rem;
@@ -407,7 +481,8 @@ p {
   align-items: center;
 }
 
-.link-list {
+.link-list,
+.card-editor-list {
   display: grid;
   gap: 0.75rem;
 }
@@ -432,16 +507,7 @@ p {
 .section-list {
   display: grid;
   gap: 0.9rem;
-  margin-top: 0.5rem;
-}
-
-.section-editor {
-  display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 18px;
-  background: #f5f2ea;
-  border: 1px solid rgba(23, 32, 51, 0.08);
+  margin-top: 0.9rem;
 }
 
 .section-editor-header {
@@ -465,6 +531,11 @@ p {
   flex-wrap: wrap;
   gap: 0.35rem;
   justify-content: flex-end;
+}
+
+.cards-editor {
+  display: grid;
+  gap: 0.8rem;
 }
 
 .secondary-button {
@@ -536,6 +607,10 @@ p {
   box-shadow: none;
 }
 
+.preview-frame .cards-grid {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 900px) {
   .topbar,
   .admin-header,
@@ -550,7 +625,8 @@ p {
   .admin-shell,
   .admin-grid,
   .section-content,
-  .link-editor {
+  .link-editor,
+  .cards-grid {
     grid-template-columns: 1fr;
   }
 
