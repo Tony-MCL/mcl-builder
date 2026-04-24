@@ -210,6 +210,8 @@ export function AdminShell({
                 site={site}
                 page={selectedPage}
                 onNavigate={onOpenPublicPage}
+                editMode={true}
+                onUpdateSection={onUpdateSection}
               />
             </div>
           </section>
