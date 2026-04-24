@@ -1,4 +1,5 @@
 export type SiteSectionType = "hero" | "text" | "cards" | "cta";
+export type CardsColumns = 1 | 2 | 3;
 
 export type SiteLink = {
   id: string;
@@ -39,6 +40,7 @@ export type SiteSection = {
   imageUrl?: string;
   imageAlt?: string;
   cards?: SiteCard[];
+  cardsColumns?: CardsColumns;
 };
 
 export type SitePageType = "standard" | "landing" | "legal";
