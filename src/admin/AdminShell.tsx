@@ -1,5 +1,10 @@
-import type { SiteData, SitePage, SiteSection, SiteSectionType } from "../types/site";
 import { PublicSite } from "../public-site/PublicSite";
+import type {
+  SiteData,
+  SitePage,
+  SiteSection,
+  SiteSectionType,
+} from "../types/site";
 
 type AdminShellProps = {
   site: SiteData;
@@ -10,6 +15,7 @@ type AdminShellProps = {
   onUpdatePage: (page: SitePage) => void;
   onAddSection: (type: SiteSectionType) => void;
   onUpdateSection: (section: SiteSection) => void;
+  onOpenPublicPage: (slug: string) => void;
 };
 
 const sectionTypes: SiteSectionType[] = ["hero", "text", "cta"];
@@ -23,6 +29,7 @@ export function AdminShell({
   onUpdatePage,
   onAddSection,
   onUpdateSection,
+  onOpenPublicPage,
 }: AdminShellProps) {
   return (
     <div className="admin-shell">
@@ -48,7 +55,12 @@ export function AdminShell({
             <h1>{selectedPage.title}</h1>
           </div>
 
-          <button disabled>Save to Firestore later</button>
+          <div className="admin-header-actions">
+            <button onClick={() => onOpenPublicPage(selectedPage.slug)}>
+              Open public page
+            </button>
+            <button disabled>Save to Firestore later</button>
+          </div>
         </header>
 
         <div className="admin-grid">
@@ -66,7 +78,9 @@ export function AdminShell({
               {site.pages.map((page) => (
                 <button
                   key={page.id}
-                  className={page.id === selectedPageId ? "page-item active" : "page-item"}
+                  className={
+                    page.id === selectedPageId ? "page-item active" : "page-item"
+                  }
                   onClick={() => onSelectPage(page.id)}
                 >
                   <strong>{page.title}</strong>
