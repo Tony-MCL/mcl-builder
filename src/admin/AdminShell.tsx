@@ -18,6 +18,8 @@ type AdminShellProps = {
   site: SiteData;
   selectedPage: SitePage;
   selectedPageId: string;
+  selectedSectionId: string | null;
+  onSelectSection: (sectionId: string | null) => void;
   saveStatus: SaveStatus;
   onSelectPage: (pageId: string) => void;
   onCreatePage: () => void;
@@ -67,6 +69,8 @@ export function AdminShell({
   site,
   selectedPage,
   selectedPageId,
+  selectedSectionId,
+  onSelectSection,
   saveStatus,
   onSelectPage,
   onCreatePage,
@@ -211,6 +215,8 @@ export function AdminShell({
                 page={selectedPage}
                 onNavigate={onOpenPublicPage}
                 editMode={true}
+                selectedSectionId={selectedSectionId}
+                onSelectSection={onSelectSection}
                 onUpdateSection={onUpdateSection}
               />
             </div>
