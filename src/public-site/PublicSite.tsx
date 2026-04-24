@@ -1,10 +1,43 @@
-import type { SiteData, SiteLink, SitePage, SiteSection } from "../types/site";
+import type {
+  SiteCard,
+  SiteData,
+  SiteLink,
+  SitePage,
+  SiteSection,
+} from "../types/site";
 
 type PublicSiteProps = {
   site: SiteData;
   page: SitePage;
   onNavigate?: (href: string) => void;
+  editMode?: boolean;
+  onUpdateSection?: (section: SiteSection) => void;
 };
+
+function EditableText({
+  value,
+  onChange,
+  as = "p",
+  className,
+}: {
+  value: string | undefined;
+  onChange: (value: string) => void;
+  as?: "h1" | "h2" | "h3" | "p" | "span";
+  className?: string;
+}) {
+  const Tag = as;
+
+  return (
+    <Tag
+      className={className}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={(event) => onChange(event.currentTarget.innerText)}
+    >
+      {value}
+    </Tag>
+  );
+}
 
 function PublicLink({
   link,
@@ -94,9 +127,13 @@ function SectionImage({ section }: { section: SiteSection }) {
 
 function SectionButton({
   section,
+  editMode,
+  onUpdate,
   onNavigate,
 }: {
   section: SiteSection;
+  editMode?: boolean;
+  onUpdate?: (section: SiteSection) => void;
   onNavigate?: (href: string) => void;
 }) {
   if (!section.buttonLabel) return null;
@@ -105,19 +142,43 @@ function SectionButton({
     <button
       type="button"
       onClick={() => {
-        if (section.buttonHref) onNavigate?.(section.buttonHref);
+        if (!editMode && section.buttonHref) onNavigate?.(section.buttonHref);
       }}
     >
-      {section.buttonLabel}
+      {editMode ? (
+        <EditableText
+          as="span"
+          value={section.buttonLabel}
+          onChange={(value) => onUpdate?.({ ...section, buttonLabel: value })}
+        />
+      ) : (
+        section.buttonLabel
+      )}
     </button>
   );
 }
 
+function updateCardInSection(
+  section: SiteSection,
+  updatedCard: SiteCard
+): SiteSection {
+  return {
+    ...section,
+    cards: (section.cards ?? []).map((card) =>
+      card.id === updatedCard.id ? updatedCard : card
+    ),
+  };
+}
+
 function SectionRenderer({
   section,
+  editMode,
+  onUpdate,
   onNavigate,
 }: {
   section: SiteSection;
+  editMode?: boolean;
+  onUpdate?: (section: SiteSection) => void;
   onNavigate?: (href: string) => void;
 }) {
   if (section.type === "cards") {
@@ -126,9 +187,35 @@ function SectionRenderer({
     return (
       <section className="section cards-section">
         <div className="section-heading">
-          <h2>{section.title}</h2>
-          {section.subtitle && <p>{section.subtitle}</p>}
-          {section.body && <p>{section.body}</p>}
+          {editMode ? (
+            <EditableText
+              as="h2"
+              value={section.title}
+              onChange={(value) => onUpdate?.({ ...section, title: value })}
+            />
+          ) : (
+            <h2>{section.title}</h2>
+          )}
+
+          {section.subtitle &&
+            (editMode ? (
+              <EditableText
+                value={section.subtitle}
+                onChange={(value) => onUpdate?.({ ...section, subtitle: value })}
+              />
+            ) : (
+              <p>{section.subtitle}</p>
+            ))}
+
+          {section.body &&
+            (editMode ? (
+              <EditableText
+                value={section.body}
+                onChange={(value) => onUpdate?.({ ...section, body: value })}
+              />
+            ) : (
+              <p>{section.body}</p>
+            ))}
         </div>
 
         <div className={`cards-grid cards-grid-${columns}`}>
@@ -142,16 +229,58 @@ function SectionRenderer({
                 />
               )}
 
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
+              {editMode ? (
+                <>
+                  <EditableText
+                    as="h3"
+                    value={card.title}
+                    onChange={(value) =>
+                      onUpdate?.(
+                        updateCardInSection(section, { ...card, title: value })
+                      )
+                    }
+                  />
+
+                  <EditableText
+                    value={card.body}
+                    onChange={(value) =>
+                      onUpdate?.(
+                        updateCardInSection(section, { ...card, body: value })
+                      )
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                </>
+              )}
 
               {card.linkLabel && (
                 <button
                   className="secondary-public-button"
                   type="button"
-                  onClick={() => card.linkHref && onNavigate?.(card.linkHref)}
+                  onClick={() => {
+                    if (!editMode && card.linkHref) onNavigate?.(card.linkHref);
+                  }}
                 >
-                  {card.linkLabel}
+                  {editMode ? (
+                    <EditableText
+                      as="span"
+                      value={card.linkLabel}
+                      onChange={(value) =>
+                        onUpdate?.(
+                          updateCardInSection(section, {
+                            ...card,
+                            linkLabel: value,
+                          })
+                        )
+                      }
+                    />
+                  ) : (
+                    card.linkLabel
+                  )}
                 </button>
               )}
             </article>
@@ -167,10 +296,46 @@ function SectionRenderer({
         <div className="section-content">
           <div>
             <div className="eyebrow">Morning Coffee Labs</div>
-            <h1>{section.title}</h1>
-            {section.subtitle && <h2>{section.subtitle}</h2>}
-            {section.body && <p>{section.body}</p>}
-            <SectionButton section={section} onNavigate={onNavigate} />
+
+            {editMode ? (
+              <EditableText
+                as="h1"
+                value={section.title}
+                onChange={(value) => onUpdate?.({ ...section, title: value })}
+              />
+            ) : (
+              <h1>{section.title}</h1>
+            )}
+
+            {section.subtitle &&
+              (editMode ? (
+                <EditableText
+                  as="h2"
+                  value={section.subtitle}
+                  onChange={(value) =>
+                    onUpdate?.({ ...section, subtitle: value })
+                  }
+                />
+              ) : (
+                <h2>{section.subtitle}</h2>
+              ))}
+
+            {section.body &&
+              (editMode ? (
+                <EditableText
+                  value={section.body}
+                  onChange={(value) => onUpdate?.({ ...section, body: value })}
+                />
+              ) : (
+                <p>{section.body}</p>
+              ))}
+
+            <SectionButton
+              section={section}
+              editMode={editMode}
+              onUpdate={onUpdate}
+              onNavigate={onNavigate}
+            />
           </div>
 
           <SectionImage section={section} />
@@ -184,9 +349,32 @@ function SectionRenderer({
       <section className="section cta-section">
         <div className="section-content">
           <div>
-            <h2>{section.title}</h2>
-            {section.body && <p>{section.body}</p>}
-            <SectionButton section={section} onNavigate={onNavigate} />
+            {editMode ? (
+              <EditableText
+                as="h2"
+                value={section.title}
+                onChange={(value) => onUpdate?.({ ...section, title: value })}
+              />
+            ) : (
+              <h2>{section.title}</h2>
+            )}
+
+            {section.body &&
+              (editMode ? (
+                <EditableText
+                  value={section.body}
+                  onChange={(value) => onUpdate?.({ ...section, body: value })}
+                />
+              ) : (
+                <p>{section.body}</p>
+              ))}
+
+            <SectionButton
+              section={section}
+              editMode={editMode}
+              onUpdate={onUpdate}
+              onNavigate={onNavigate}
+            />
           </div>
 
           <SectionImage section={section} />
@@ -199,9 +387,32 @@ function SectionRenderer({
     <section className="section">
       <div className="section-content">
         <div>
-          <h2>{section.title}</h2>
-          {section.body && <p>{section.body}</p>}
-          <SectionButton section={section} onNavigate={onNavigate} />
+          {editMode ? (
+            <EditableText
+              as="h2"
+              value={section.title}
+              onChange={(value) => onUpdate?.({ ...section, title: value })}
+            />
+          ) : (
+            <h2>{section.title}</h2>
+          )}
+
+          {section.body &&
+            (editMode ? (
+              <EditableText
+                value={section.body}
+                onChange={(value) => onUpdate?.({ ...section, body: value })}
+              />
+            ) : (
+              <p>{section.body}</p>
+            ))}
+
+          <SectionButton
+            section={section}
+            editMode={editMode}
+            onUpdate={onUpdate}
+            onNavigate={onNavigate}
+          />
         </div>
 
         <SectionImage section={section} />
@@ -210,21 +421,33 @@ function SectionRenderer({
   );
 }
 
-export function PublicSite({ site, page, onNavigate }: PublicSiteProps) {
+export function PublicSite({
+  site,
+  page,
+  onNavigate,
+  editMode = false,
+  onUpdateSection,
+}: PublicSiteProps) {
   return (
     <>
       <PublicHeader site={site} page={page} onNavigate={onNavigate} />
 
-      <main className={`public-site page-type-${page.pageType ?? "standard"}`}>
+      <main
+        className={`public-site page-type-${page.pageType ?? "standard"} ${
+          editMode ? "public-site-edit-mode" : ""
+        }`}
+      >
         {page.sections
           .filter((section) => section.enabled !== false)
           .map((section) => (
-          <SectionRenderer
-            key={section.id}
-            section={section}
-            onNavigate={onNavigate}
-          />
-        ))}
+            <SectionRenderer
+              key={section.id}
+              section={section}
+              editMode={editMode}
+              onUpdate={onUpdateSection}
+              onNavigate={onNavigate}
+            />
+          ))}
       </main>
 
       <PublicFooter site={site} page={page} onNavigate={onNavigate} />
