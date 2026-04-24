@@ -2,12 +2,43 @@ import { useMemo, useState } from "react";
 import { AdminShell } from "../admin/AdminShell";
 import { demoSite } from "../data/demoSite";
 import { PublicSite } from "../public-site/PublicSite";
-import type { SiteData, SitePage, SiteSection, SiteSectionType } from "../types/site";
+import type {
+  SiteData,
+  SitePage,
+  SiteSection,
+  SiteSectionType,
+} from "../types/site";
 
 type AppMode = "public" | "admin";
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeSlug(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "/";
+  }
+
+  if (trimmed === "/") {
+    return "/";
+  }
+
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function getCurrentSlug() {
+  const pathname = window.location.pathname;
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  if (basePath && pathname.startsWith(basePath)) {
+    const withoutBase = pathname.slice(basePath.length);
+    return withoutBase || "/";
+  }
+
+  return pathname || "/";
 }
 
 function createEmptyPage(existingCount: number): SitePage {
@@ -64,11 +95,32 @@ function createSection(type: SiteSectionType): SiteSection {
 export default function App() {
   const [mode, setMode] = useState<AppMode>("public");
   const [site, setSite] = useState<SiteData>(demoSite);
-  const [selectedPageId, setSelectedPageId] = useState(demoSite.pages[0]?.id ?? "");
+  const [selectedPageId, setSelectedPageId] = useState(
+    demoSite.pages[0]?.id ?? ""
+  );
+  const [currentSlug, setCurrentSlug] = useState(getCurrentSlug);
 
   const selectedPage = useMemo(() => {
     return site.pages.find((page) => page.id === selectedPageId) ?? site.pages[0];
   }, [selectedPageId, site.pages]);
+
+  const publicPage = useMemo(() => {
+    const normalizedCurrentSlug = normalizeSlug(currentSlug);
+    return (
+      site.pages.find((page) => normalizeSlug(page.slug) === normalizedCurrentSlug) ??
+      site.pages[0]
+    );
+  }, [currentSlug, site.pages]);
+
+  function setPublicPath(slug: string) {
+    const normalizedSlug = normalizeSlug(slug);
+    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const nextPath = `${basePath}${normalizedSlug === "/" ? "/" : normalizedSlug}`;
+
+    window.history.pushState({}, "", nextPath);
+    setCurrentSlug(normalizedSlug);
+    setMode("public");
+  }
 
   function createPage() {
     const newPage = createEmptyPage(site.pages.length);
@@ -86,7 +138,12 @@ export default function App() {
     setSite((currentSite) => ({
       ...currentSite,
       pages: currentSite.pages.map((page) =>
-        page.id === updatedPage.id ? updatedPage : page
+        page.id === updatedPage.id
+          ? {
+              ...updatedPage,
+              slug: normalizeSlug(updatedPage.slug),
+            }
+          : page
       ),
     }));
   }
@@ -118,7 +175,7 @@ export default function App() {
       <header className="topbar">
         <div>
           <strong>Morning Coffee Labs Builder</strong>
-          <span>Foundation v0.2</span>
+          <span>Foundation v0.3</span>
         </div>
 
         <div className="mode-switch">
@@ -138,7 +195,7 @@ export default function App() {
       </header>
 
       {mode === "public" ? (
-        <PublicSite page={selectedPage} />
+        <PublicSite page={publicPage} />
       ) : (
         <AdminShell
           site={site}
@@ -149,6 +206,7 @@ export default function App() {
           onUpdatePage={updatePage}
           onAddSection={addSection}
           onUpdateSection={updateSection}
+          onOpenPublicPage={setPublicPath}
         />
       )}
     </div>
