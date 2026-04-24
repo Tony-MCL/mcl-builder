@@ -218,6 +218,9 @@ export function AdminShell({
                 selectedSectionId={selectedSectionId}
                 onSelectSection={onSelectSection}
                 onUpdateSection={onUpdateSection}
+                onMoveSection={onMoveSection}
+                onDuplicateSection={onDuplicateSection}
+                onDeleteSection={onDeleteSection}
               />
             </div>
           </section>
