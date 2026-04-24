@@ -26,14 +26,14 @@ function PublicLink({
 
 function PublicHeader({
   site,
+  page,
   onNavigate,
 }: {
   site: SiteData;
+  page: SitePage;
   onNavigate?: (href: string) => void;
 }) {
-  if (!site.header.enabled) {
-    return null;
-  }
+  if (!site.header.enabled || page.hideHeader) return null;
 
   return (
     <header className="site-header">
@@ -54,14 +54,14 @@ function PublicHeader({
 
 function PublicFooter({
   site,
+  page,
   onNavigate,
 }: {
   site: SiteData;
+  page: SitePage;
   onNavigate?: (href: string) => void;
 }) {
-  if (!site.footer.enabled) {
-    return null;
-  }
+  if (!site.footer.enabled || page.hideFooter) return null;
 
   return (
     <footer className="site-footer">
@@ -79,9 +79,7 @@ function PublicFooter({
 }
 
 function SectionImage({ section }: { section: SiteSection }) {
-  if (!section.imageUrl) {
-    return null;
-  }
+  if (!section.imageUrl) return null;
 
   return (
     <div className="section-image-wrap">
@@ -101,17 +99,13 @@ function SectionButton({
   section: SiteSection;
   onNavigate?: (href: string) => void;
 }) {
-  if (!section.buttonLabel) {
-    return null;
-  }
+  if (!section.buttonLabel) return null;
 
   return (
     <button
       type="button"
       onClick={() => {
-        if (section.buttonHref) {
-          onNavigate?.(section.buttonHref);
-        }
+        if (section.buttonHref) onNavigate?.(section.buttonHref);
       }}
     >
       {section.buttonLabel}
@@ -126,6 +120,43 @@ function SectionRenderer({
   section: SiteSection;
   onNavigate?: (href: string) => void;
 }) {
+  if (section.type === "cards") {
+    return (
+      <section className="section cards-section">
+        <div className="section-heading">
+          <h2>{section.title}</h2>
+          {section.subtitle && <p>{section.subtitle}</p>}
+          {section.body && <p>{section.body}</p>}
+        </div>
+
+        <div className="cards-grid">
+          {(section.cards ?? []).map((card) => (
+            <article className="public-card" key={card.id}>
+              {card.imageUrl && (
+                <img
+                  className="public-card-image"
+                  src={card.imageUrl}
+                  alt={card.imageAlt || ""}
+                />
+              )}
+              <h3>{card.title}</h3>
+              <p>{card.body}</p>
+              {card.linkLabel && (
+                <button
+                  className="secondary-public-button"
+                  type="button"
+                  onClick={() => card.linkHref && onNavigate?.(card.linkHref)}
+                >
+                  {card.linkLabel}
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   if (section.type === "hero") {
     return (
       <section className="section hero-section">
@@ -178,9 +209,9 @@ function SectionRenderer({
 export function PublicSite({ site, page, onNavigate }: PublicSiteProps) {
   return (
     <>
-      <PublicHeader site={site} onNavigate={onNavigate} />
+      <PublicHeader site={site} page={page} onNavigate={onNavigate} />
 
-      <main className="public-site">
+      <main className={`public-site page-type-${page.pageType ?? "standard"}`}>
         {page.sections.map((section) => (
           <SectionRenderer
             key={section.id}
@@ -190,7 +221,7 @@ export function PublicSite({ site, page, onNavigate }: PublicSiteProps) {
         ))}
       </main>
 
-      <PublicFooter site={site} onNavigate={onNavigate} />
+      <PublicFooter site={site} page={page} onNavigate={onNavigate} />
     </>
   );
 }
