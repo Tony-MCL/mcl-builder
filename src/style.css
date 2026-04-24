@@ -212,6 +212,13 @@ p {
   margin-bottom: 1.25rem;
 }
 
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
 .admin-header h1 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 3.5rem);
