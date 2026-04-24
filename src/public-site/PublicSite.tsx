@@ -4,6 +4,7 @@ import type {
   SiteLink,
   SitePage,
   SiteSection,
+  SiteSectionType,
 } from "../types/site";
 
 type PublicSiteProps = {
@@ -17,6 +18,7 @@ type PublicSiteProps = {
   onMoveSection?: (sectionId: string, direction: "up" | "down") => void;
   onDuplicateSection?: (sectionId: string) => void;
   onDeleteSection?: (sectionId: string) => void;
+  onInsertSection?: (type: SiteSectionType, index: number) => void;
 };
 
 function EditableText({
@@ -248,6 +250,29 @@ function PreviewSectionActions({
         onClick={() => onDeleteSection?.(section.id)}
       >
         ×
+      </button>
+    </div>
+  );
+}
+
+function PreviewInsertSectionBar({
+  onInsert,
+}: {
+  onInsert: (type: SiteSectionType) => void;
+}) {
+  return (
+    <div className="insert-section-bar" onClick={(event) => event.stopPropagation()}>
+      <button type="button" onClick={() => onInsert("hero")}>
+        + Hero
+      </button>
+      <button type="button" onClick={() => onInsert("text")}>
+        + Text
+      </button>
+      <button type="button" onClick={() => onInsert("cards")}>
+        + Cards
+      </button>
+      <button type="button" onClick={() => onInsert("cta")}>
+        + CTA
       </button>
     </div>
   );
@@ -589,7 +614,8 @@ export function PublicSite({
   onMoveSection,
   onDuplicateSection,
   onDeleteSection,
-}: PublicSiteProps) {
+  onInsertSection,
+  }: PublicSiteProps) {
   const visibleSections = page.sections.filter(
     (section) => section.enabled !== false
   );
@@ -607,21 +633,34 @@ export function PublicSite({
         }}
       >
         {visibleSections.map((section, index) => (
-          <SectionRenderer
-            key={section.id}
-            section={section}
-            editMode={editMode}
-            selectedSectionId={selectedSectionId}
-            isFirst={index === 0}
-            isLast={index === visibleSections.length - 1}
-            onSelectSection={onSelectSection}
-            onUpdate={onUpdateSection}
-            onNavigate={onNavigate}
-            onMoveSection={onMoveSection}
-            onDuplicateSection={onDuplicateSection}
-            onDeleteSection={onDeleteSection}
-          />
+          <div key={section.id}>
+            {editMode && (
+              <PreviewInsertSectionBar
+                onInsert={(type) => onInsertSection?.(type, index)}
+              />
+            )}
+        
+            <SectionRenderer
+              section={section}
+              editMode={editMode}
+              selectedSectionId={selectedSectionId}
+              isFirst={index === 0}
+              isLast={index === visibleSections.length - 1}
+              onSelectSection={onSelectSection}
+              onUpdate={onUpdateSection}
+              onNavigate={onNavigate}
+              onMoveSection={onMoveSection}
+              onDuplicateSection={onDuplicateSection}
+              onDeleteSection={onDeleteSection}
+            />
+          </div>
         ))}
+        
+        {editMode && (
+          <PreviewInsertSectionBar
+            onInsert={(type) => onInsertSection?.(type, visibleSections.length)}
+          />
+        )}
       </main>
 
       <PublicFooter site={site} page={page} onNavigate={onNavigate} />
