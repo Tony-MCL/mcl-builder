@@ -241,6 +241,38 @@ export default function App() {
     });
   }
 
+  function duplicateSection(sectionId: string) {
+    if (!selectedPage) return;
+  
+    const sectionToDuplicate = selectedPage.sections.find(
+      (section) => section.id === sectionId
+    );
+  
+    if (!sectionToDuplicate) return;
+  
+    const duplicatedSection: SiteSection = {
+      ...sectionToDuplicate,
+      id: createId("section"),
+      title: `${sectionToDuplicate.title} copy`,
+      cards: sectionToDuplicate.cards?.map((card) => ({
+        ...card,
+        id: createId("card"),
+      })),
+    };
+  
+    const currentIndex = selectedPage.sections.findIndex(
+      (section) => section.id === sectionId
+    );
+  
+    const nextSections = [...selectedPage.sections];
+    nextSections.splice(currentIndex + 1, 0, duplicatedSection);
+  
+    updatePage({
+      ...selectedPage,
+      sections: nextSections,
+    });
+  }
+
   function deleteSection(sectionId: string) {
     if (!selectedPage) return;
 
@@ -380,6 +412,7 @@ export default function App() {
           onUpdatePage={updatePage}
           onAddSection={addSection}
           onUpdateSection={updateSection}
+          onDuplicateSection={duplicateSection}
           onDeleteSection={deleteSection}
           onMoveSection={moveSection}
           onOpenPublicPage={setPublicPath}
