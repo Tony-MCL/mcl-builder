@@ -658,4 +658,9 @@ p {
   .site-footer-links {
     justify-content: flex-start;
   }
+
+  .link-picker {
+    display: grid;
+    gap: 0.45rem;
+  }
 }
