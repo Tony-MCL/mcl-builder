@@ -375,4 +375,29 @@ p {
   .preview-panel {
     position: static;
   }
+
+  .secondary-button {
+    background: white;
+    color: #172033;
+    border: 1px solid rgba(23, 32, 51, 0.16);
+  }
+  
+  .save-status {
+    margin: 0.5rem 0 0;
+    font-size: 0.92rem;
+    font-weight: 800;
+  }
+  
+  .save-status-loaded,
+  .save-status-saving {
+    color: #687086;
+  }
+  
+  .save-status-saved {
+    color: #2f7d46;
+  }
+  
+  .save-status-error {
+    color: #b83232;
+  }
 }
