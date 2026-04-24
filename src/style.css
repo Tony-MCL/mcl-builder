@@ -735,3 +735,25 @@ p {
     background: #b83232;
     color: white;
   }
+
+.insert-section-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.public-site-edit-mode .insert-section-bar:hover {
+  opacity: 1;
+}
+
+.insert-section-bar button {
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: #8a5a2b;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px dashed rgba(138, 90, 43, 0.55);
+}
