@@ -31,6 +31,8 @@ export type SiteCard = {
 
 export type SiteSection = {
   id: string;
+  internalName?: string;
+  enabled?: boolean;
   type: SiteSectionType;
   title: string;
   subtitle?: string;
