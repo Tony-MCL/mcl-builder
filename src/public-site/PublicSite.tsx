@@ -11,6 +11,8 @@ type PublicSiteProps = {
   page: SitePage;
   onNavigate?: (href: string) => void;
   editMode?: boolean;
+  selectedSectionId?: string | null;
+  onSelectSection?: (sectionId: string | null) => void;
   onUpdateSection?: (section: SiteSection) => void;
 };
 
@@ -170,14 +172,44 @@ function updateCardInSection(
   };
 }
 
+function getSectionClassName(
+  section: SiteSection,
+  baseClassName: string,
+  selectedSectionId?: string | null
+) {
+  return `${baseClassName} ${
+    selectedSectionId === section.id ? "selected-preview-section" : ""
+  }`;
+}
+
+function getSectionClickHandler({
+  editMode,
+  section,
+  onSelectSection,
+}: {
+  editMode?: boolean;
+  section: SiteSection;
+  onSelectSection?: (sectionId: string | null) => void;
+}) {
+  return (event: React.MouseEvent<HTMLElement>) => {
+    if (!editMode) return;
+    event.stopPropagation();
+    onSelectSection?.(section.id);
+  };
+}
+
 function SectionRenderer({
   section,
   editMode,
+  selectedSectionId,
+  onSelectSection,
   onUpdate,
   onNavigate,
 }: {
   section: SiteSection;
   editMode?: boolean;
+  selectedSectionId?: string | null;
+  onSelectSection?: (sectionId: string | null) => void;
   onUpdate?: (section: SiteSection) => void;
   onNavigate?: (href: string) => void;
 }) {
@@ -185,7 +217,18 @@ function SectionRenderer({
     const columns = section.cardsColumns ?? 3;
 
     return (
-      <section className="section cards-section">
+      <section
+        className={getSectionClassName(
+          section,
+          "section cards-section",
+          selectedSectionId
+        )}
+        onClick={getSectionClickHandler({
+          editMode,
+          section,
+          onSelectSection,
+        })}
+      >
         <div className="section-heading">
           {editMode ? (
             <EditableText
@@ -292,7 +335,18 @@ function SectionRenderer({
 
   if (section.type === "hero") {
     return (
-      <section className="section hero-section">
+      <section
+        className={getSectionClassName(
+          section,
+          "section hero-section",
+          selectedSectionId
+        )}
+        onClick={getSectionClickHandler({
+          editMode,
+          section,
+          onSelectSection,
+        })}
+      >
         <div className="section-content">
           <div>
             <div className="eyebrow">Morning Coffee Labs</div>
@@ -346,7 +400,18 @@ function SectionRenderer({
 
   if (section.type === "cta") {
     return (
-      <section className="section cta-section">
+      <section
+        className={getSectionClassName(
+          section,
+          "section cta-section",
+          selectedSectionId
+        )}
+        onClick={getSectionClickHandler({
+          editMode,
+          section,
+          onSelectSection,
+        })}
+      >
         <div className="section-content">
           <div>
             {editMode ? (
@@ -384,7 +449,14 @@ function SectionRenderer({
   }
 
   return (
-    <section className="section">
+    <section
+      className={getSectionClassName(section, "section", selectedSectionId)}
+      onClick={getSectionClickHandler({
+        editMode,
+        section,
+        onSelectSection,
+      })}
+    >
       <div className="section-content">
         <div>
           {editMode ? (
@@ -426,6 +498,8 @@ export function PublicSite({
   page,
   onNavigate,
   editMode = false,
+  selectedSectionId,
+  onSelectSection,
   onUpdateSection,
 }: PublicSiteProps) {
   return (
@@ -436,6 +510,9 @@ export function PublicSite({
         className={`public-site page-type-${page.pageType ?? "standard"} ${
           editMode ? "public-site-edit-mode" : ""
         }`}
+        onClick={() => {
+          if (editMode) onSelectSection?.(null);
+        }}
       >
         {page.sections
           .filter((section) => section.enabled !== false)
@@ -444,6 +521,8 @@ export function PublicSite({
               key={section.id}
               section={section}
               editMode={editMode}
+              selectedSectionId={selectedSectionId}
+              onSelectSection={onSelectSection}
               onUpdate={onUpdateSection}
               onNavigate={onNavigate}
             />
