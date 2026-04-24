@@ -14,6 +14,9 @@ type PublicSiteProps = {
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string | null) => void;
   onUpdateSection?: (section: SiteSection) => void;
+  onMoveSection?: (sectionId: string, direction: "up" | "down") => void;
+  onDuplicateSection?: (sectionId: string) => void;
+  onDeleteSection?: (sectionId: string) => void;
 };
 
 function EditableText({
@@ -198,21 +201,95 @@ function getSectionClickHandler({
   };
 }
 
+function PreviewSectionActions({
+  section,
+  editMode,
+  isFirst,
+  isLast,
+  onMoveSection,
+  onDuplicateSection,
+  onDeleteSection,
+}: {
+  section: SiteSection;
+  editMode?: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  onMoveSection?: (sectionId: string, direction: "up" | "down") => void;
+  onDuplicateSection?: (sectionId: string) => void;
+  onDeleteSection?: (sectionId: string) => void;
+}) {
+  if (!editMode) return null;
+
+  return (
+    <div
+      className="preview-section-actions"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <button
+        type="button"
+        disabled={isFirst}
+        onClick={() => onMoveSection?.(section.id, "up")}
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        disabled={isLast}
+        onClick={() => onMoveSection?.(section.id, "down")}
+      >
+        ↓
+      </button>
+      <button type="button" onClick={() => onDuplicateSection?.(section.id)}>
+        ⧉
+      </button>
+      <button
+        className="preview-danger-button"
+        type="button"
+        onClick={() => onDeleteSection?.(section.id)}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 function SectionRenderer({
   section,
   editMode,
   selectedSectionId,
+  isFirst,
+  isLast,
   onSelectSection,
   onUpdate,
   onNavigate,
+  onMoveSection,
+  onDuplicateSection,
+  onDeleteSection,
 }: {
   section: SiteSection;
   editMode?: boolean;
   selectedSectionId?: string | null;
+  isFirst: boolean;
+  isLast: boolean;
   onSelectSection?: (sectionId: string | null) => void;
   onUpdate?: (section: SiteSection) => void;
   onNavigate?: (href: string) => void;
+  onMoveSection?: (sectionId: string, direction: "up" | "down") => void;
+  onDuplicateSection?: (sectionId: string) => void;
+  onDeleteSection?: (sectionId: string) => void;
 }) {
+  const actions = (
+    <PreviewSectionActions
+      section={section}
+      editMode={editMode}
+      isFirst={isFirst}
+      isLast={isLast}
+      onMoveSection={onMoveSection}
+      onDuplicateSection={onDuplicateSection}
+      onDeleteSection={onDeleteSection}
+    />
+  );
+
   if (section.type === "cards") {
     const columns = section.cardsColumns ?? 3;
 
@@ -229,6 +306,8 @@ function SectionRenderer({
           onSelectSection,
         })}
       >
+        {actions}
+
         <div className="section-heading">
           {editMode ? (
             <EditableText
@@ -347,6 +426,8 @@ function SectionRenderer({
           onSelectSection,
         })}
       >
+        {actions}
+
         <div className="section-content">
           <div>
             <div className="eyebrow">Morning Coffee Labs</div>
@@ -412,6 +493,8 @@ function SectionRenderer({
           onSelectSection,
         })}
       >
+        {actions}
+
         <div className="section-content">
           <div>
             {editMode ? (
@@ -457,6 +540,8 @@ function SectionRenderer({
         onSelectSection,
       })}
     >
+      {actions}
+
       <div className="section-content">
         <div>
           {editMode ? (
@@ -501,7 +586,14 @@ export function PublicSite({
   selectedSectionId,
   onSelectSection,
   onUpdateSection,
+  onMoveSection,
+  onDuplicateSection,
+  onDeleteSection,
 }: PublicSiteProps) {
+  const visibleSections = page.sections.filter(
+    (section) => section.enabled !== false
+  );
+
   return (
     <>
       <PublicHeader site={site} page={page} onNavigate={onNavigate} />
@@ -514,19 +606,22 @@ export function PublicSite({
           if (editMode) onSelectSection?.(null);
         }}
       >
-        {page.sections
-          .filter((section) => section.enabled !== false)
-          .map((section) => (
-            <SectionRenderer
-              key={section.id}
-              section={section}
-              editMode={editMode}
-              selectedSectionId={selectedSectionId}
-              onSelectSection={onSelectSection}
-              onUpdate={onUpdateSection}
-              onNavigate={onNavigate}
-            />
-          ))}
+        {visibleSections.map((section, index) => (
+          <SectionRenderer
+            key={section.id}
+            section={section}
+            editMode={editMode}
+            selectedSectionId={selectedSectionId}
+            isFirst={index === 0}
+            isLast={index === visibleSections.length - 1}
+            onSelectSection={onSelectSection}
+            onUpdate={onUpdateSection}
+            onNavigate={onNavigate}
+            onMoveSection={onMoveSection}
+            onDuplicateSection={onDuplicateSection}
+            onDeleteSection={onDeleteSection}
+          />
+        ))}
       </main>
 
       <PublicFooter site={site} page={page} onNavigate={onNavigate} />
