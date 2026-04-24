@@ -1,6 +1,9 @@
 import { PublicSite } from "../public-site/PublicSite";
 import type {
   SiteData,
+  SiteFooter,
+  SiteHeader,
+  SiteLink,
   SitePage,
   SiteSection,
   SiteSectionType,
@@ -18,8 +21,18 @@ type AdminShellProps = {
   onUpdatePage: (page: SitePage) => void;
   onAddSection: (type: SiteSectionType) => void;
   onUpdateSection: (section: SiteSection) => void;
+  onDeleteSection: (sectionId: string) => void;
+  onMoveSection: (sectionId: string, direction: "up" | "down") => void;
   onOpenPublicPage: (slug: string) => void;
   onResetLocalSite: () => void;
+  onUpdateHeader: (header: SiteHeader) => void;
+  onUpdateFooter: (footer: SiteFooter) => void;
+  onAddHeaderLink: () => void;
+  onAddFooterLink: () => void;
+  onUpdateHeaderLink: (link: SiteLink) => void;
+  onUpdateFooterLink: (link: SiteLink) => void;
+  onDeleteHeaderLink: (linkId: string) => void;
+  onDeleteFooterLink: (linkId: string) => void;
 };
 
 const sectionTypes: SiteSectionType[] = ["hero", "text", "cta"];
@@ -41,8 +54,18 @@ export function AdminShell({
   onUpdatePage,
   onAddSection,
   onUpdateSection,
+  onDeleteSection,
+  onMoveSection,
   onOpenPublicPage,
   onResetLocalSite,
+  onUpdateHeader,
+  onUpdateFooter,
+  onAddHeaderLink,
+  onAddFooterLink,
+  onUpdateHeaderLink,
+  onUpdateFooterLink,
+  onDeleteHeaderLink,
+  onDeleteFooterLink,
 }: AdminShellProps) {
   return (
     <div className="admin-shell">
@@ -84,28 +107,42 @@ export function AdminShell({
 
         <div className="admin-grid">
           <section className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <h2>Pages</h2>
-                <p className="muted">Choose or create a page.</p>
+            <GlobalLayoutEditor
+              site={site}
+              onUpdateHeader={onUpdateHeader}
+              onUpdateFooter={onUpdateFooter}
+              onAddHeaderLink={onAddHeaderLink}
+              onAddFooterLink={onAddFooterLink}
+              onUpdateHeaderLink={onUpdateHeaderLink}
+              onUpdateFooterLink={onUpdateFooterLink}
+              onDeleteHeaderLink={onDeleteHeaderLink}
+              onDeleteFooterLink={onDeleteFooterLink}
+            />
+
+            <div className="editor-group">
+              <div className="admin-panel-header">
+                <div>
+                  <h2>Pages</h2>
+                  <p className="muted">Choose or create a page.</p>
+                </div>
+
+                <button onClick={onCreatePage}>New page</button>
               </div>
 
-              <button onClick={onCreatePage}>New page</button>
-            </div>
-
-            <div className="page-list">
-              {site.pages.map((page) => (
-                <button
-                  key={page.id}
-                  className={
-                    page.id === selectedPageId ? "page-item active" : "page-item"
-                  }
-                  onClick={() => onSelectPage(page.id)}
-                >
-                  <strong>{page.title}</strong>
-                  <span>{page.slug}</span>
-                </button>
-              ))}
+              <div className="page-list">
+                {site.pages.map((page) => (
+                  <button
+                    key={page.id}
+                    className={
+                      page.id === selectedPageId ? "page-item active" : "page-item"
+                    }
+                    onClick={() => onSelectPage(page.id)}
+                  >
+                    <strong>{page.title}</strong>
+                    <span>{page.slug}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="editor-group">
@@ -163,11 +200,15 @@ export function AdminShell({
               </div>
 
               <div className="section-list">
-                {selectedPage.sections.map((section) => (
+                {selectedPage.sections.map((section, index) => (
                   <SectionEditor
                     key={section.id}
                     section={section}
+                    isFirst={index === 0}
+                    isLast={index === selectedPage.sections.length - 1}
                     onUpdateSection={onUpdateSection}
+                    onDeleteSection={onDeleteSection}
+                    onMoveSection={onMoveSection}
                   />
                 ))}
               </div>
@@ -183,7 +224,11 @@ export function AdminShell({
             </div>
 
             <div className="preview-frame">
-              <PublicSite page={selectedPage} />
+              <PublicSite
+                site={site}
+                page={selectedPage}
+                onNavigate={onOpenPublicPage}
+              />
             </div>
           </section>
         </div>
@@ -192,18 +237,228 @@ export function AdminShell({
   );
 }
 
+function GlobalLayoutEditor({
+  site,
+  onUpdateHeader,
+  onUpdateFooter,
+  onAddHeaderLink,
+  onAddFooterLink,
+  onUpdateHeaderLink,
+  onUpdateFooterLink,
+  onDeleteHeaderLink,
+  onDeleteFooterLink,
+}: {
+  site: SiteData;
+  onUpdateHeader: (header: SiteHeader) => void;
+  onUpdateFooter: (footer: SiteFooter) => void;
+  onAddHeaderLink: () => void;
+  onAddFooterLink: () => void;
+  onUpdateHeaderLink: (link: SiteLink) => void;
+  onUpdateFooterLink: (link: SiteLink) => void;
+  onDeleteHeaderLink: (linkId: string) => void;
+  onDeleteFooterLink: (linkId: string) => void;
+}) {
+  return (
+    <div className="editor-group no-border">
+      <h2>Global layout</h2>
+      <p className="muted">
+        Header and footer are global. They are optional, so legal pages or landing
+        pages can later use different display rules.
+      </p>
+
+      <div className="layout-box">
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={site.header.enabled}
+            onChange={(event) =>
+              onUpdateHeader({
+                ...site.header,
+                enabled: event.target.checked,
+              })
+            }
+          />
+          Show header
+        </label>
+
+        <label>
+          Header logo/text
+          <input
+            value={site.header.logoText}
+            onChange={(event) =>
+              onUpdateHeader({
+                ...site.header,
+                logoText: event.target.value,
+              })
+            }
+          />
+        </label>
+
+        <div className="link-editor-header">
+          <strong>Header links</strong>
+          <button type="button" onClick={onAddHeaderLink}>
+            Add link
+          </button>
+        </div>
+
+        <div className="link-list">
+          {site.header.links.map((link) => (
+            <LinkEditor
+              key={link.id}
+              link={link}
+              onUpdate={onUpdateHeaderLink}
+              onDelete={onDeleteHeaderLink}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="layout-box">
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={site.footer.enabled}
+            onChange={(event) =>
+              onUpdateFooter({
+                ...site.footer,
+                enabled: event.target.checked,
+              })
+            }
+          />
+          Show footer
+        </label>
+
+        <label>
+          Footer text
+          <textarea
+            value={site.footer.text}
+            onChange={(event) =>
+              onUpdateFooter({
+                ...site.footer,
+                text: event.target.value,
+              })
+            }
+          />
+        </label>
+
+        <div className="link-editor-header">
+          <strong>Footer links</strong>
+          <button type="button" onClick={onAddFooterLink}>
+            Add link
+          </button>
+        </div>
+
+        <div className="link-list">
+          {site.footer.links.map((link) => (
+            <LinkEditor
+              key={link.id}
+              link={link}
+              onUpdate={onUpdateFooterLink}
+              onDelete={onDeleteFooterLink}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LinkEditor({
+  link,
+  onUpdate,
+  onDelete,
+}: {
+  link: SiteLink;
+  onUpdate: (link: SiteLink) => void;
+  onDelete: (linkId: string) => void;
+}) {
+  return (
+    <div className="link-editor">
+      <label>
+        Label
+        <input
+          value={link.label}
+          onChange={(event) =>
+            onUpdate({
+              ...link,
+              label: event.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Link / slug
+        <input
+          value={link.href}
+          onChange={(event) =>
+            onUpdate({
+              ...link,
+              href: event.target.value,
+            })
+          }
+        />
+      </label>
+
+      <button
+        className="danger-button"
+        type="button"
+        onClick={() => onDelete(link.id)}
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+
 function SectionEditor({
   section,
+  isFirst,
+  isLast,
   onUpdateSection,
+  onDeleteSection,
+  onMoveSection,
 }: {
   section: SiteSection;
+  isFirst: boolean;
+  isLast: boolean;
   onUpdateSection: (section: SiteSection) => void;
+  onDeleteSection: (sectionId: string) => void;
+  onMoveSection: (sectionId: string, direction: "up" | "down") => void;
 }) {
   return (
     <div className="section-editor">
       <div className="section-editor-header">
-        <strong>{section.title || "Untitled section"}</strong>
-        <span>{section.type}</span>
+        <div>
+          <strong>{section.title || "Untitled section"}</strong>
+          <span>{section.type}</span>
+        </div>
+
+        <div className="section-actions">
+          <button
+            className="secondary-button tiny-button"
+            type="button"
+            disabled={isFirst}
+            onClick={() => onMoveSection(section.id, "up")}
+          >
+            Up
+          </button>
+          <button
+            className="secondary-button tiny-button"
+            type="button"
+            disabled={isLast}
+            onClick={() => onMoveSection(section.id, "down")}
+          >
+            Down
+          </button>
+          <button
+            className="danger-button tiny-button"
+            type="button"
+            onClick={() => onDeleteSection(section.id)}
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       <label>
@@ -247,19 +502,62 @@ function SectionEditor({
         />
       </label>
 
+      <label>
+        Image URL
+        <input
+          value={section.imageUrl ?? ""}
+          placeholder="https://..."
+          onChange={(event) =>
+            onUpdateSection({
+              ...section,
+              imageUrl: event.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Image alt text
+        <input
+          value={section.imageAlt ?? ""}
+          onChange={(event) =>
+            onUpdateSection({
+              ...section,
+              imageAlt: event.target.value,
+            })
+          }
+        />
+      </label>
+
       {(section.type === "hero" || section.type === "cta") && (
-        <label>
-          Button label
-          <input
-            value={section.buttonLabel ?? ""}
-            onChange={(event) =>
-              onUpdateSection({
-                ...section,
-                buttonLabel: event.target.value,
-              })
-            }
-          />
-        </label>
+        <>
+          <label>
+            Button label
+            <input
+              value={section.buttonLabel ?? ""}
+              onChange={(event) =>
+                onUpdateSection({
+                  ...section,
+                  buttonLabel: event.target.value,
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Button link / slug
+            <input
+              value={section.buttonHref ?? ""}
+              placeholder="/products"
+              onChange={(event) =>
+                onUpdateSection({
+                  ...section,
+                  buttonHref: event.target.value,
+                })
+              }
+            />
+          </label>
+        </>
       )}
     </div>
   );
