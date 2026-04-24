@@ -6,30 +6,43 @@ import type {
   SiteSectionType,
 } from "../types/site";
 
+type SaveStatus = "loaded" | "saving" | "saved" | "error";
+
 type AdminShellProps = {
   site: SiteData;
   selectedPage: SitePage;
   selectedPageId: string;
+  saveStatus: SaveStatus;
   onSelectPage: (pageId: string) => void;
   onCreatePage: () => void;
   onUpdatePage: (page: SitePage) => void;
   onAddSection: (type: SiteSectionType) => void;
   onUpdateSection: (section: SiteSection) => void;
   onOpenPublicPage: (slug: string) => void;
+  onResetLocalSite: () => void;
 };
 
 const sectionTypes: SiteSectionType[] = ["hero", "text", "cta"];
+
+function getSaveStatusLabel(status: SaveStatus) {
+  if (status === "saving") return "Saving locally...";
+  if (status === "saved") return "Saved locally";
+  if (status === "error") return "Local save failed";
+  return "Loaded from local storage";
+}
 
 export function AdminShell({
   site,
   selectedPage,
   selectedPageId,
+  saveStatus,
   onSelectPage,
   onCreatePage,
   onUpdatePage,
   onAddSection,
   onUpdateSection,
   onOpenPublicPage,
+  onResetLocalSite,
 }: AdminShellProps) {
   return (
     <div className="admin-shell">
@@ -53,13 +66,19 @@ export function AdminShell({
           <div>
             <p className="admin-label">Selected page</p>
             <h1>{selectedPage.title}</h1>
+            <p className={`save-status save-status-${saveStatus}`}>
+              {getSaveStatusLabel(saveStatus)}
+            </p>
           </div>
 
           <div className="admin-header-actions">
             <button onClick={() => onOpenPublicPage(selectedPage.slug)}>
               Open public page
             </button>
-            <button disabled>Save to Firestore later</button>
+            <button className="secondary-button" onClick={onResetLocalSite}>
+              Reset local data
+            </button>
+            <button disabled>Firestore later</button>
           </div>
         </header>
 
